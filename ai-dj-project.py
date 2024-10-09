@@ -4,6 +4,7 @@ from transformers import AutoProcessor, MusicgenForConditionalGeneration
 import numpy as np
 import streamlit as st
 
+os.environ['HF_TOKEN'] = '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'
 # Increase startup timeout
 st.set_page_config(page_title="Rhythm Maker", layout="wide")
 
