@@ -82,3 +82,6 @@ if 'selected_style' in locals():
     )
 
 st.button("Make New Song", on_click=lambda: st.experimental_rerun())
+
+if st.button("Make New Song"):
+    st.rerun()
