@@ -20,9 +20,12 @@ h1 {
     margin-bottom: 30px;
     text-align: center;
 }
+.centered-text {
+    text-align: center;
+}
 .button-container {
-    display: inline-flex;
-    gap: 5px;
+    display: flex;
+    gap: 10px;
 }
 .stButton > button {
     color: #4B0082;
@@ -34,7 +37,6 @@ h1 {
 
 os.environ['HF_TOKEN'] = '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'
 
-# Rest of your Streamlit app code...
 @st.cache_resource
 def load_model():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -72,13 +74,15 @@ def generate_song(style, duration=60):
     return audio_data, sampling_rate
 
 st.title("Rhythm Maker")
-st.write("Welcome to the AI DJ Project! Generate your own music with AI.")
+st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate your own music with AI.</p>', unsafe_allow_html=True)
 
 # Wrap your buttons in a container div
 st.markdown('<div class="button-container">', unsafe_allow_html=True)
-for style in ["jazz", "rock", "electronic", "classical"]:
-    if st.button(style.capitalize()):
-        selected_style = style
+cols = st.columns(4)
+for i, style in enumerate(["jazz", "rock", "electronic", "classical"]):
+    with cols[i]:
+        if st.button(style.capitalize()):
+            selected_style = style
 st.markdown('</div>', unsafe_allow_html=True)
 
 if 'selected_style' in locals():
