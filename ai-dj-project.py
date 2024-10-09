@@ -3,7 +3,6 @@ import os
 import torch
 from transformers import AutoProcessor, MusicgenForConditionalGeneration
 import numpy as np
-
 # Set page config first
 st.set_page_config(page_title="Rhythm Maker", layout="wide")
 
@@ -11,6 +10,15 @@ st.markdown("""
 <style>
 .stApp {
     background: linear-gradient(90deg, #8A2BE2 0%, #4B0082 30%, #000000 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+.stApp > header {
+    background-color: transparent;
+}
+.stApp {
     color: white !important;
 }
 h1 {
@@ -18,21 +26,72 @@ h1 {
     text-shadow: 0 0 10px #8A2BE2, 0 0 20px #8A2BE2, 0 0 30px #8A2BE2;
     font-size: 3em;
     margin-bottom: 30px;
-    text-align: center;
 }
 .stButton > button {
     color: #4B0082;
     background-color: white;
     font-weight: bold;
-    padding: 10px 15px;
-    font-size: 16px;
-    margin-right: 10px;
+}
+.bubble-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+.bubble {
+    position: absolute;
+    bottom: -100px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    opacity: 0.5;
+    animation: rise 10s infinite ease-in;
+}
+@keyframes rise {
+    0% {
+        bottom: -100px;
+        transform: translateX(0);
+    }
+    50% {
+        transform: translate(100px, -500px);
+    }
+    100% {
+        bottom: 1080px;
+        transform: translateX(-200px);
+    }
 }
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<div class="bubble-container"></div>
+<script>
+function createBubbles() {
+    const bubbleContainer = document.querySelector('.bubble-container');
+    const bubbleCount = 50;
+
+    for (let i = 0; i < bubbleCount; i++) {
+        const bubble = document.createElement('div');
+        bubble.classList.add('bubble');
+        bubble.style.left = `${Math.random() * 100}%`;
+        bubble.style.width = `${Math.random() * 30 + 10}px`;
+        bubble.style.height = bubble.style.width;
+        bubble.style.animationDuration = `${Math.random() * 15 + 5}s`;
+        bubble.style.animationDelay = `${Math.random() * 5}s`;
+        bubbleContainer.appendChild(bubble);
+    }
+}
+window.addEventListener('load', createBubbles);
+</script>
+""", unsafe_allow_html=True)
+
+
 os.environ['HF_TOKEN'] = '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'
 
+# Rest of your Streamlit app code...
 @st.cache_resource
 def load_model():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -72,13 +131,14 @@ def generate_song(style, duration=60):
 st.title("Rhythm Maker")
 st.write("Welcome to the AI DJ Project! Generate your own music with AI.")
 
-selected_style = None
-for style in ["jazz", "rock", "electronic", "classical"]:
-    if st.button(style.capitalize()):
+styles = ["jazz", "rock", "electronic", "classical"]
+cols = st.columns(len(styles))
+for i, style in enumerate(styles):
+    if cols[i].button(style.capitalize()):
         selected_style = style
 
-if selected_style:
-    with st.spinner(f"Generating your {selected_style} song..."):
+if 'selected_style' in locals():
+    with st.spinner("Generating your song..."):
         audio_data, sampling_rate = generate_song(selected_style)
     
     st.audio(audio_data, format='audio/wav', sample_rate=sampling_rate)
