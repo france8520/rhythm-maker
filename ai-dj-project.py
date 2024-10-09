@@ -36,7 +36,7 @@ h1 {
     height: 100%;
     overflow: hidden;
     pointer-events: none;
-    z-index: 0;
+    z-index: -1;
 }
 .bubble {
     position: absolute;
@@ -66,7 +66,12 @@ st.markdown("""
 <div class="bubble-container"></div>
 <script>
 function createBubbles() {
+    console.log("Creating bubbles");
     const bubbleContainer = document.querySelector('.bubble-container');
+    if (!bubbleContainer) {
+        console.error("Bubble container not found");
+        return;
+    }
     const bubbleCount = 50;
 
     for (let i = 0; i < bubbleCount; i++) {
@@ -141,11 +146,14 @@ st.markdown("""
     margin: 0 2px;  /* Reduced horizontal margin */
 }
 .stButton > button {
-    padding: 10px 15px;  /* Slightly reduced padding */
+    pcolor: #4B0082;
+    background-color: white;
+    font-weight: bold;
+    padding: 10px 15px;
+    font-size: 16px;/* Slightly reduced padding */
 }
 #styleButtons {
     display: flex;
-    justify-content: center;
     gap: 5px;  /* Minimal gap between buttons */
 }
 </style>
