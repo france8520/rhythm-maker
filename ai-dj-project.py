@@ -43,9 +43,9 @@ h1 {
     }
 }
 button { 
-    margin: 10px; 
-    padding: 15px 30px; 
-    font-size: 18px; 
+    margin: 5px; 
+    padding: 20px 40px; 
+    font-size: 20px; 
     cursor: pointer; 
     background: #ffffff;
     border: none;
