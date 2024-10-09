@@ -3,103 +3,41 @@ import os
 import torch
 from transformers import AutoProcessor, MusicgenForConditionalGeneration
 import numpy as np
-# Set page config first
+
+# Set page config
 st.set_page_config(page_title="Rhythm Maker", layout="wide")
 
-st.markdown("""
-<style>
-.stApp {
-    background: linear-gradient(90deg, #8A2BE2 0%, #4B0082 30%, #000000 100%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-}
-.stApp > header {
-    background-color: transparent;
-}
-.stApp {
-    color: white !important;
-}
-h1 {
-    color: white;
-    text-shadow: 0 0 10px #8A2BE2, 0 0 20px #8A2BE2, 0 0 30px #8A2BE2;
-    font-size: 3em;
-    margin-bottom: 30px;
-}
-
-.bubble-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    pointer-events: none;
-    z-index: -1;
-}
-.bubble {
-    position: absolute;
-    bottom: -100px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    opacity: 0.5;
-    animation: rise 10s infinite ease-in;
-}
-@keyframes rise {
-    0% {
-        bottom: -100px;
-        transform: translateX(0);
+# Apply custom CSS
+def apply_custom_css():
+    st.markdown("""
+    <style>
+    .stApp {
+        background: linear-gradient(90deg, #8A2BE2 0%, #4B0082 30%, #000000 100%);
+        color: white !important;
     }
-    50% {
-        transform: translate(100px, -500px);
+    h1 {
+        color: white;
+        text-shadow: 0 0 10px #8A2BE2, 0 0 20px #8A2BE2, 0 0 30px #8A2BE2;
+        font-size: 3em;
+        margin-bottom: 30px;
     }
-    100% {
-        bottom: 1080px;
-        transform: translateX(-200px);
+    .stButton > button {
+        color: #4B0082;
+        background-color: white;
+        font-weight: bold;
+        padding: 10px 15px;
+        font-size: 16px;
     }
-}
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<div class="bubble-container"></div>
-<script>
-function createBubbles() {
-    console.log("Creating bubbles");
-    const bubbleContainer = document.querySelector('.bubble-container');
-    if (!bubbleContainer) {
-        console.error("Bubble container not found");
-        return;
+    #style-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 20px;
     }
-    const bubbleCount = 50;
+    </style>
+    """, unsafe_allow_html=True)
 
-    for (let i = 0; i < bubbleCount; i++) {
-        const bubble = document.createElement('div');
-        bubble.classList.add('bubble');
-        bubble.style.left = `${Math.random() * 100}%`;
-        bubble.style.width = `${Math.random() * 30 + 10}px`;
-        bubble.style.height = bubble.style.width;
-        bubble.style.animationDuration = `${Math.random() * 15 + 5}s`;
-        bubble.style.animationDelay = `${Math.random() * 5}s`;
-        bubbleContainer.appendChild(bubble);
-    }
-}
-// Use MutationObserver to detect when Streamlit's root element is added to the DOM
-const observer = new MutationObserver((mutations) => {
-    if (document.querySelector('.stApp')) {
-        createBubbles();
-        observer.disconnect();
-    }
-});
-observer.observe(document.body, { childList: true, subtree: true });
-</script>
-""", unsafe_allow_html=True)
-
-
-os.environ['HF_TOKEN'] = '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'
-
-# Rest of your Streamlit app code...
+# Load model
 @st.cache_resource
 def load_model():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -107,8 +45,7 @@ def load_model():
     processor = AutoProcessor.from_pretrained("facebook/musicgen-small", token=os.environ['HF_TOKEN'])
     return model, processor, device
 
-model, processor, device = load_model()
-
+# Generate song
 def generate_song(style, duration=60):
     prompt = f"Create an engaging {style} song with a catchy melody and rhythm"
     inputs = processor(
@@ -120,7 +57,7 @@ def generate_song(style, duration=60):
     sampling_rate = 32000
     total_samples = duration * sampling_rate
     
-    max_new_tokens = min(int(total_samples / 256), 1024)  # Limit to 1024 tokens
+    max_new_tokens = min(int(total_samples / 256), 1024)
     
     audio_values = model.generate(
         **inputs,
@@ -131,54 +68,59 @@ def generate_song(style, duration=60):
     )
     
     audio_data = audio_values[0].cpu().numpy()
-    
     audio_data = audio_data / np.max(np.abs(audio_data))
     
     return audio_data, sampling_rate
 
-st.title("Rhythm Maker")
-st.write("Welcome to the AI DJ Project! Generate your own music with AI.")
-
-st.markdown("""
-<style>
-.stButton {
-    display: inline-block;
-    margin: 0 2px;  /* Reduced horizontal margin */
-}
-.stButton > button {
-    pcolor: #4B0082;
-    background-color: white;
-    font-weight: bold;
-    padding: 10px 15px;
-    font-size: 16px;/* Slightly reduced padding */
-}
-#styleButtons {
-    display: flex;
-    gap: 5px;  /* Minimal gap between buttons */
-}
-</style>
-""", unsafe_allow_html=True)
-
-# Wrap your buttons in a container div
-st.markdown('<div id="styleButtons">', unsafe_allow_html=True)
-for style in ["jazz", "rock", "electronic", "classical"]:
-    if st.button(style.capitalize()):
-        selected_style = style
-st.markdown('</div>', unsafe_allow_html=True)
-
-if 'selected_style' in locals():
-    with st.spinner("Generating your song..."):
-        audio_data, sampling_rate = generate_song(selected_style)
+# Main app
+def main():
+    apply_custom_css()
     
-    st.audio(audio_data, format='audio/wav', sample_rate=sampling_rate)
+    st.title("Rhythm Maker")
+    st.write("Welcome to the AI DJ Project! Generate your own music with AI.")
     
-    st.download_button(
-        label="Download Song",
-        data=audio_data.tobytes(),
-        file_name=f"{selected_style}_song.wav",
-        mime="audio/wav"
-    )
+    # Initialize session state
+    if 'selected_style' not in st.session_state:
+        st.session_state.selected_style = None
+    if 'audio_data' not in st.session_state:
+        st.session_state.audio_data = None
+    if 'sampling_rate' not in st.session_state:
+        st.session_state.sampling_rate = None
+    
+    # Style selection buttons
+    st.markdown('<div id="style-buttons">', unsafe_allow_html=True)
+    for style in ["jazz", "rock", "electronic", "classical"]:
+        if st.button(style.capitalize()):
+            st.session_state.selected_style = style
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Duration slider
+    duration = st.slider("Select song duration (seconds)", 10, 120, 60)
+    
+    # Generate button
+    if st.button("Generate Song"):
+        if st.session_state.selected_style:
+            with st.spinner(f"Generating your {st.session_state.selected_style} song..."):
+                try:
+                    st.session_state.audio_data, st.session_state.sampling_rate = generate_song(st.session_state.selected_style, duration)
+                    st.success("Song generated successfully!")
+                except Exception as e:
+                    st.error(f"An error occurred while generating the song: {str(e)}")
+        else:
+            st.warning("Please select a music style first.")
+    
+    # Display audio player and download button if audio is generated
+    if st.session_state.audio_data is not None and st.session_state.sampling_rate is not None:
+        st.audio(st.session_state.audio_data, format='audio/wav', sample_rate=st.session_state.sampling_rate)
+        
+        st.download_button(
+            label="Download Song",
+            data=st.session_state.audio_data.tobytes(),
+            file_name=f"{st.session_state.selected_style}_song.wav",
+            mime="audio/wav"
+        )
 
-if st.button("Make New Song"):
-    st.rerun()
-
+if __name__ == "__main__":
+    os.environ['HF_TOKEN'] = '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'
+    model, processor, device = load_model()
+    main()
