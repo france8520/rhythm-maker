@@ -10,43 +10,54 @@ st.set_page_config(page_title="Rhythm Maker", layout="wide")
 
 st.markdown("""
 <style>
-.stApp {
+body { 
+    font-family: 'Arial', sans-serif; 
+    text-align: center; 
+    margin: 0; 
+    padding: 0; 
+    color: #fff;
+    position: relative;
+    width: 100%;
+    height: 100vh;
     background: linear-gradient(90deg, #8A2BE2 0%, #4B0082 30%, #000000 100%);
     display: flex;
     flex-direction: column;
+    justify-content: center;
     align-items: center;
-    text-align: center;
-}
-.stApp > header {
-    background-color: transparent;
-}
-.stApp {
-    color: white !important;
 }
 h1 {
-    color: white;
+    font-size: 4em;
+    letter-spacing: 8px;
+    color: #fff;
+    margin-bottom: 40px;
+    text-transform: uppercase;
     text-shadow: 0 0 10px #8A2BE2, 0 0 20px #8A2BE2, 0 0 30px #8A2BE2;
-    font-size: 3em;
-    margin-bottom: 30px;
+    animation: glow 1.5s ease-in-out infinite alternate;
 }
-.stButton {
-    display: inline-block;
-    margin: 0 2px;  /* Reduced horizontal margin */
+@keyframes glow {
+    from {
+        text-shadow: 0 0 10px #8A2BE2, 0 0 20px #8A2BE2, 0 0 30px #8A2BE2;
+    }
+    to {
+        text-shadow: 0 0 20px #8A2BE2, 0 0 30px #8A2BE2, 0 0 40px #8A2BE2;
+    }
 }
-
-.stButton > button {
-    color: #4B0082;
-    background-color: white;
+button { 
+    margin: 10px; 
+    padding: 15px 30px; 
+    font-size: 18px; 
+    cursor: pointer; 
+    background: #ffffff;
+    border: none;
+    color: #8A2BE2;
     font-weight: bold;
-    padding: 10px 15px;  /* Slightly reduced padding */
+    border-radius: 30px;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(138, 43, 226, 0.5);
 }
-
-/* Adjust the gap to bring buttons closer */
-.button-container {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 5px;  /* Reduced gap between buttons */
+button:hover {
+    transform: translateY(-5px) scale(1.1);
+    box-shadow: 0 8px 20px rgba(138, 43, 226, 0.8);
 }
 .bubble-container {
     position: fixed;
@@ -56,11 +67,13 @@ h1 {
     height: 100%;
     overflow: hidden;
     pointer-events: none;
-    z-index: 0;
+    z-index: -1;
 }
 .bubble {
     position: absolute;
     bottom: -100px;
+    width: 40px;
+    height: 40px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 50%;
     opacity: 0.5;
@@ -80,6 +93,28 @@ h1 {
     }
 }
 </style>
+<div class="bubble-container"></div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<script>
+function createBubbles() {
+    const bubbleContainer = document.querySelector('.bubble-container');
+    const bubbleCount = 50;
+
+    for (let i = 0; i < bubbleCount; i++) {
+        const bubble = document.createElement('div');
+        bubble.classList.add('bubble');
+        bubble.style.left = `${Math.random() * 100}%`;
+        bubble.style.width = `${Math.random() * 30 + 10}px`;
+        bubble.style.height = bubble.style.width;
+        bubble.style.animationDuration = `${Math.random() * 15 + 5}s`;
+        bubble.style.animationDelay = `${Math.random() * 5}s`;
+        bubbleContainer.appendChild(bubble);
+    }
+}
+window.addEventListener('load', createBubbles);
+</script>
 """, unsafe_allow_html=True)
 
 
