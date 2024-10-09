@@ -7,12 +7,21 @@ import numpy as np
 # Set page config first
 st.set_page_config(page_title="Rhythm Maker", layout="wide")
 
+# Now load CSS and apply it
+with open('templates/index.html', 'r') as file:
+    html_content = file.read()
+    css_content = html_content.split('<style>')[1].split('</style>')[0]
 
 st.markdown("""
 <style>
-body {
+.stApp {
     background: linear-gradient(90deg, #8A2BE2 0%, #4B0082 30%, #000000 100%);
-    color: white;
+}
+.stApp > header {
+    background-color: transparent;
+}
+.stApp {
+    color: white !important;
 }
 .bubble-container {
     position: fixed;
@@ -22,7 +31,7 @@ body {
     height: 100%;
     overflow: hidden;
     pointer-events: none;
-    z-index: -1;
+    z-index: 0;
 }
 .bubble {
     position: absolute;
@@ -62,7 +71,7 @@ function createBubbles() {
         bubbleContainer.appendChild(bubble);
     }
 }
-window.onload = createBubbles;
+document.addEventListener('DOMContentLoaded', createBubbles);
 </script>
 """, unsafe_allow_html=True)
 
