@@ -139,7 +139,6 @@ st.markdown("""
 <style>
 .button-container {
     display: flex;
-    justify-content: center;
     gap: 5px;  /* Adjust this value to control the gap */
 }
 .stButton {
