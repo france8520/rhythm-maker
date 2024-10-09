@@ -29,16 +29,10 @@ h1 {
     font-size: 3em;
     margin-bottom: 30px;
 }
-.stButton {
-    display: inline-block;
-    margin: 5px;
-}
 .stButton > button {
     color: #4B0082;
     background-color: white;
     font-weight: bold;
-    padding: 10px 20px;
-    margin: 0;
 }
 .bubble-container {
     position: fixed;
@@ -71,14 +65,9 @@ h1 {
         transform: translateX(-200px);
     }
 }
-.button-container {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 10px;
-}
 </style>
 """, unsafe_allow_html=True)
+
 
 
 os.environ['HF_TOKEN'] = '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'
@@ -121,13 +110,14 @@ def generate_song(style, duration=60):
     return audio_data, sampling_rate
 
 st.title("Rhythm Maker")
-st.write("Make rhythm from your style.")
+st.write("Welcome to the AI DJ Project! Generate your own music with AI.")
 
-st.markdown('<div class="button-container">', unsafe_allow_html=True)
-for style in ["jazz", "rock", "electronic", "classical"]:
-    if st.button(style.capitalize()):
+styles = ["jazz", "rock", "electronic", "classical"]
+cols = st.columns(len(styles))
+for i, style in enumerate(styles):
+    if cols[i].button(style.capitalize()):
         selected_style = style
-st.markdown('</div>', unsafe_allow_html=True)
+
 if 'selected_style' in locals():
     with st.spinner("Generating your song..."):
         audio_data, sampling_rate = generate_song(selected_style)
