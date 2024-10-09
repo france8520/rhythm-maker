@@ -12,6 +12,26 @@ with open('templates/index.html', 'r') as file:
     html_content = file.read()
     css_content = html_content.split('<style>')[1].split('</style>')[0]
 
+st.markdown(f"""
+<style>
+{css_content}
+body {{
+    background: linear-gradient(90deg, #8A2BE2 0%, #4B0082 30%, #000000 100%);
+}}
+.bubble-container {{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: -1;
+}}
+</style>
+<div class="bubble-container"></div>
+""", unsafe_allow_html=True)
+
 st.markdown("""
 <script>
 function createBubbles() {
@@ -32,6 +52,7 @@ function createBubbles() {
 window.addEventListener('load', createBubbles);
 </script>
 """, unsafe_allow_html=True)
+
 
 os.environ['HF_TOKEN'] = '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'
 
