@@ -1,50 +1,39 @@
+import streamlit as st
 import os
 import torch
 from transformers import AutoProcessor, MusicgenForConditionalGeneration
 import numpy as np
-import streamlit as st
 
-os.environ['HF_TOKEN'] = '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'
-# Increase startup timeout
+# Set page config first
 st.set_page_config(page_title="Rhythm Maker", layout="wide")
 
-# Load CSS from index.html
+# Now load CSS and apply it
 with open('templates/index.html', 'r') as file:
     html_content = file.read()
     css_content = html_content.split('<style>')[1].split('</style>')[0]
 
-st.set_page_config(page_title="Rhythm Maker", layout="wide")
-
-# Apply custom CSS including background and bubble animation
-st.markdown(f"""
-<style>
-{css_content}
-body {{
-    background: linear-gradient(90deg, #8A2BE2 0%, #4B0082 30%, #000000 100%);
-}}
-</style>
-
-<div class="bubble-container"></div>
-
+st.markdown("""
 <script>
-function createBubbles() {{
+function createBubbles() {
     const bubbleContainer = document.querySelector('.bubble-container');
     const bubbleCount = 50;
 
-    for (let i = 0; i < bubbleCount; i++) {{
+    for (let i = 0; i < bubbleCount; i++) {
         const bubble = document.createElement('div');
         bubble.classList.add('bubble');
-        bubble.style.left = `${{Math.random() * 100}}%`;
-        bubble.style.width = `${{Math.random() * 30 + 10}}px`;
+        bubble.style.left = `${Math.random() * 100}%`;
+        bubble.style.width = `${Math.random() * 30 + 10}px`;
         bubble.style.height = bubble.style.width;
-        bubble.style.animationDuration = `${{Math.random() * 15 + 5}}s`;
-        bubble.style.animationDelay = `${{Math.random() * 5}}s`;
+        bubble.style.animationDuration = `${Math.random() * 15 + 5}s`;
+        bubble.style.animationDelay = `${Math.random() * 5}s`;
         bubbleContainer.appendChild(bubble);
-    }}
-}}
+    }
+}
 window.addEventListener('load', createBubbles);
 </script>
 """, unsafe_allow_html=True)
+
+os.environ['HF_TOKEN'] = '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'
 
 # Rest of your Streamlit app code...
 @st.cache_resource
