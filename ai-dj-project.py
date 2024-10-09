@@ -12,8 +12,6 @@ with open('templates/index.html', 'r') as file:
     html_content = file.read()
     css_content = html_content.split('<style>')[1].split('</style>')[0]
 
-st.set_page_config(page_title="Rhythm Maker", layout="wide")
-
 st.markdown("""
 <style>
 body {
