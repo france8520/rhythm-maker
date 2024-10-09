@@ -27,23 +27,7 @@ h1 {
     font-size: 3em;
     margin-bottom: 30px;
 }
-.stButton > button {
-    margin: 5px;
-    padding: 15px 30px;
-    font-size: 18px;
-    cursor: pointer;
-    background: #ffffff;
-    border: none;
-    color: #8A2BE2;
-    font-weight: bold;
-    border-radius: 30px;
-    transition: all 0.3s ease;
-    box-shadow: 0 5px 15px rgba(138, 43, 226, 0.5);
-}
-.stButton > button:hover {
-    transform: translateY(-5px) scale(1.1);
-    box-shadow: 0 8px 20px rgba(138, 43, 226, 0.8);
-}
+
 .bubble-container {
     position: fixed;
     top: 0;
@@ -83,11 +67,8 @@ st.markdown("""
 <script>
 function createBubbles() {
     const bubbleContainer = document.querySelector('.bubble-container');
-    if (!bubbleContainer) {
-        console.error('Bubble container not found');
-        return;
-    }
     const bubbleCount = 50;
+
     for (let i = 0; i < bubbleCount; i++) {
         const bubble = document.createElement('div');
         bubble.classList.add('bubble');
@@ -99,7 +80,14 @@ function createBubbles() {
         bubbleContainer.appendChild(bubble);
     }
 }
-document.addEventListener('DOMContentLoaded', createBubbles);
+// Use MutationObserver to detect when Streamlit's root element is added to the DOM
+const observer = new MutationObserver((mutations) => {
+    if (document.querySelector('.stApp')) {
+        createBubbles();
+        observer.disconnect();
+    }
+});
+observer.observe(document.body, { childList: true, subtree: true });
 </script>
 """, unsafe_allow_html=True)
 
@@ -146,11 +134,29 @@ def generate_song(style, duration=60):
 st.title("Rhythm Maker")
 st.write("Welcome to the AI DJ Project! Generate your own music with AI.")
 
-styles = ["jazz", "rock", "electronic", "classical"]
-cols = st.columns(len(styles))
-for i, style in enumerate(styles):
-    if cols[i].button(style.capitalize()):
+st.markdown("""
+<style>
+.stButton {
+    display: inline-block;
+    margin: 0 2px;  /* Reduced horizontal margin */
+}
+.stButton > button {
+    padding: 10px 15px;  /* Slightly reduced padding */
+}
+#styleButtons {
+    display: flex;
+    justify-content: center;
+    gap: 5px;  /* Minimal gap between buttons */
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Wrap your buttons in a container div
+st.markdown('<div id="styleButtons">', unsafe_allow_html=True)
+for style in ["jazz", "rock", "electronic", "classical"]:
+    if st.button(style.capitalize()):
         selected_style = style
+st.markdown('</div>', unsafe_allow_html=True)
 
 if 'selected_style' in locals():
     with st.spinner("Generating your song..."):
