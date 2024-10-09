@@ -3,61 +3,34 @@ import os
 import torch
 from transformers import AutoProcessor, MusicgenForConditionalGeneration
 import numpy as np
-
 # Set page config first
 st.set_page_config(page_title="Rhythm Maker", layout="wide")
 
-
 st.markdown("""
 <style>
-body { 
-    font-family: 'Arial', sans-serif; 
-    text-align: center; 
-    margin: 0; 
-    padding: 0; 
-    color: #fff;
-    position: relative;
-    width: 100%;
-    height: 100vh;
+.stApp {
     background: linear-gradient(90deg, #8A2BE2 0%, #4B0082 30%, #000000 100%);
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
+    text-align: center;
+}
+.stApp > header {
+    background-color: transparent;
+}
+.stApp {
+    color: white !important;
 }
 h1 {
-    font-size: 4em;
-    letter-spacing: 8px;
-    color: #fff;
-    margin-bottom: 40px;
-    text-transform: uppercase;
+    color: white;
     text-shadow: 0 0 10px #8A2BE2, 0 0 20px #8A2BE2, 0 0 30px #8A2BE2;
-    animation: glow 1.5s ease-in-out infinite alternate;
+    font-size: 3em;
+    margin-bottom: 30px;
 }
-@keyframes glow {
-    from {
-        text-shadow: 0 0 10px #8A2BE2, 0 0 20px #8A2BE2, 0 0 30px #8A2BE2;
-    }
-    to {
-        text-shadow: 0 0 20px #8A2BE2, 0 0 30px #8A2BE2, 0 0 40px #8A2BE2;
-    }
-}
-button { 
-    margin: 5px; 
-    padding: 20px 40px; 
-    font-size: 20px; 
-    cursor: pointer; 
-    background: #ffffff;
-    border: none;
-    color: #8A2BE2;
+.stButton > button {
+    color: #4B0082;
+    background-color: white;
     font-weight: bold;
-    border-radius: 30px;
-    transition: all 0.3s ease;
-    box-shadow: 0 5px 15px rgba(138, 43, 226, 0.5);
-}
-button:hover {
-    transform: translateY(-5px) scale(1.1);
-    box-shadow: 0 8px 20px rgba(138, 43, 226, 0.8);
 }
 .bubble-container {
     position: fixed;
@@ -67,13 +40,11 @@ button:hover {
     height: 100%;
     overflow: hidden;
     pointer-events: none;
-    z-index: -1;
+    z-index: 0;
 }
 .bubble {
     position: absolute;
     bottom: -100px;
-    width: 40px;
-    height: 40px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 50%;
     opacity: 0.5;
@@ -93,10 +64,10 @@ button:hover {
     }
 }
 </style>
-<div class="bubble-container"></div>
 """, unsafe_allow_html=True)
 
 st.markdown("""
+<div class="bubble-container"></div>
 <script>
 function createBubbles() {
     const bubbleContainer = document.querySelector('.bubble-container');
@@ -116,7 +87,6 @@ function createBubbles() {
 window.addEventListener('load', createBubbles);
 </script>
 """, unsafe_allow_html=True)
-
 
 
 os.environ['HF_TOKEN'] = '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'
