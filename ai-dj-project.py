@@ -37,31 +37,26 @@ h1 {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     overflow: hidden;
     pointer-events: none;
-    z-index: 0;
+    z-index: -1;
 }
+
 .bubble {
     position: absolute;
-    bottom: -100px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 50%;
-    opacity: 0.5;
-    animation: rise 10s infinite ease-in;
+    animation: float 20s linear infinite;
 }
-@keyframes rise {
+
+@keyframes float {
     0% {
-        bottom: -100px;
-        transform: translateX(0);
-    }
-    50% {
-        transform: translate(100px, -500px);
+        transform: translateY(100vh) scale(0);
     }
     100% {
-        bottom: 1080px;
-        transform: translateX(-200px);
+        transform: translateY(-100vh) scale(1);
     }
 }
 </style>
@@ -80,11 +75,11 @@ function createBubbles() {
     for (let i = 0; i < bubbleCount; i++) {
         const bubble = document.createElement('div');
         bubble.classList.add('bubble');
-        bubble.style.left = `${Math.random() * 100}%`;
-        bubble.style.width = `${Math.random() * 30 + 10}px`;
+        bubble.style.left = `${Math.random() * 100}vw`;
+        bubble.style.width = `${Math.random() * 20 + 10}px`;
         bubble.style.height = bubble.style.width;
-        bubble.style.animationDuration = `${Math.random() * 15 + 5}s`;
-        bubble.style.animationDelay = `${Math.random() * 5}s`;
+        bubble.style.animationDuration = `${Math.random() * 10 + 10}s`;
+        bubble.style.animationDelay = `${Math.random() * 10}s`;
         bubbleContainer.appendChild(bubble);
     }
 }
@@ -138,7 +133,8 @@ st.write("Welcome to the AI DJ Project! Generate your own music with AI.")
 st.markdown("""
 <style>
 .button-container {
-    display: flex;
+    display: inline-flex;
+    justify-content: center;
     gap: 5px;  /* Adjust this value to control the gap */
 }
 .stButton {
