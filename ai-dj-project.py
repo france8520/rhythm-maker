@@ -12,16 +12,18 @@ with open('templates/index.html', 'r') as file:
     html_content = file.read()
     css_content = html_content.split('<style>')[1].split('</style>')[0]
 
-st.markdown("""
+# Update the CSS for a more readable and visually appealing style
+st.markdown('''
 <style>
 .stApp {
-    background: linear-gradient(90deg, #8A2BE2 0%, #4B0082 30%, #000000 100%);
+    background: linear-gradient(90deg, #003366 0%, #000066 50%, #000000 100%);
 }
 .stApp > header {
     background-color: transparent;
 }
 .stApp {
     color: white !important;
+    font-family: 'Arial', sans-serif;
 }
 .bubble-container {
     position: fixed;
@@ -38,7 +40,7 @@ st.markdown("""
     bottom: -100px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 50%;
-    opacity: 0.5;
+    opacity: 0.3;
     animation: rise 10s infinite ease-in;
 }
 @keyframes rise {
@@ -47,11 +49,11 @@ st.markdown("""
         transform: translateX(0);
     }
     50% {
-        transform: translate(100px, -500px);
+        transform: translate(50px, -500px);
     }
     100% {
         bottom: 1080px;
-        transform: translateX(-200px);
+        transform: translateX(-150px);
     }
 }
 </style>
@@ -59,21 +61,52 @@ st.markdown("""
 <script>
 function createBubbles() {
     const bubbleContainer = document.querySelector('.bubble-container');
-    const bubbleCount = 50;
+    const bubbleCount = 30; // Reduced bubble count for less clutter
     for (let i = 0; i < bubbleCount; i++) {
         const bubble = document.createElement('div');
         bubble.classList.add('bubble');
         bubble.style.left = `${Math.random() * 100}%`;
-        bubble.style.width = `${Math.random() * 30 + 10}px`;
+        bubble.style.width = `${Math.random() * 25 + 10}px`;
         bubble.style.height = bubble.style.width;
-        bubble.style.animationDuration = `${Math.random() * 15 + 5}s`;
-        bubble.style.animationDelay = `${Math.random() * 5}s`;
+        bubble.style.animationDuration = `${Math.random() * 12 + 8}s`; // Slower bubbles
+        bubble.style.animationDelay = `${Math.random() * 4}s`;
         bubbleContainer.appendChild(bubble);
     }
 }
 document.addEventListener('DOMContentLoaded', createBubbles);
 </script>
-""", unsafe_allow_html=True)
+''', unsafe_allow_html=True)
+
+# Layout changes to improve user experience
+st.title("Rhythm Maker: AI-Powered Music Generation")
+
+# Create layout with columns to organize content better
+col1, col2 = st.columns(2)
+
+# Section 1: Upload or generate music
+with col1:
+    st.header("Upload or Generate Music")
+    uploaded_file = st.file_uploader("Choose a music file", type=["mp3", "wav"])
+    if uploaded_file:
+        st.audio(uploaded_file, format='audio/mp3')
+
+# Section 2: AI-generated music section
+with col2:
+    st.header("AI-Generated Music")
+    st.text("Use our AI model to generate music based on your inputs.")
+
+    # Simulate a button to generate music
+    if st.button('Generate AI Music'):
+        with st.spinner('Generating music...'):
+            st.success("AI Music Generated!")
+
+# Adding footer information
+st.markdown('''
+<footer style='text-align: center; color: lightgray; font-size: 0.8em;'>
+    Created by AI DJ © 2024. All rights reserved.
+</footer>
+''', unsafe_allow_html=True)
+
 
 
 os.environ['HF_TOKEN'] = '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'
