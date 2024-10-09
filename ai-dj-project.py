@@ -29,10 +29,24 @@ h1 {
     font-size: 3em;
     margin-bottom: 30px;
 }
+.stButton {
+    display: inline-block;
+    margin: 0 2px;  /* Reduced horizontal margin */
+}
+
 .stButton > button {
     color: #4B0082;
     background-color: white;
     font-weight: bold;
+    padding: 10px 15px;  /* Slightly reduced padding */
+}
+
+/* Adjust the gap to bring buttons closer */
+.button-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 5px;  /* Reduced gap between buttons */
 }
 .bubble-container {
     position: fixed;
