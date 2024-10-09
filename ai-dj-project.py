@@ -23,23 +23,14 @@ h1 {
 .centered-text {
     text-align: center;
 }
-.button-container {
-    display: flex;
-    justify-content: center;
-    gap: 0px;
-    margin-bottom: 20px;
-}
 .stButton > button {
     color: #4B0082;
     background-color: white;
     font-weight: bold;
-    border-radius: 0;
-    border: 1px solid #4B0082;
+    width: 100%;
 }
-.make-new-song-container {
-    display: flex;
-    justify-content: center;
-    margin-top: 20px;
+div[data-testid="stHorizontalBlock"] {
+    gap: 0rem !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -85,7 +76,7 @@ def generate_song(style, duration=60):
 st.title("Rhythm Maker")
 st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate your own music with AI.</p>', unsafe_allow_html=True)
 
-st.markdown('<div class="button-container">', unsafe_allow_html=True)
+
 col1, col2, col3, col4 = st.columns(4)
 if col1.button("Jazz"):
     selected_style = "jazz"
@@ -95,7 +86,7 @@ if col3.button("Electronic"):
     selected_style = "electronic"
 if col4.button("Classical"):
     selected_style = "classical"
-st.markdown('</div>', unsafe_allow_html=True)
+
 
 if 'selected_style' in locals():
     with st.spinner("Generating your song..."):
@@ -111,7 +102,7 @@ if 'selected_style' in locals():
     )
 
 # Center the "Make New Song" button
-st.markdown('<div class="make-new-song-container">', unsafe_allow_html=True)
-if st.button("Make New Song"):
-    st.rerun()
-st.markdown('</div>', unsafe_allow_html=True)
+_, center_col, _ = st.columns([1,2,1])
+with center_col:
+    if st.button("Make New Song"):
+        st.rerun()
