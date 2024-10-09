@@ -7,7 +7,6 @@ import numpy as np
 # Set page config first
 st.set_page_config(page_title="Rhythm Maker", layout="wide")
 
-
 st.markdown("""
 <style>
 .stApp {
@@ -27,14 +26,20 @@ h1 {
 .button-container {
     display: flex;
     justify-content: center;
-    gap: 10px;
+    gap: 0px;
     margin-bottom: 20px;
 }
 .stButton > button {
     color: #4B0082;
     background-color: white;
     font-weight: bold;
-    width: 120px;  /* Set a fixed width for all buttons */
+    border-radius: 0;
+    border: 1px solid #4B0082;
+}
+.make-new-song-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -80,10 +85,8 @@ def generate_song(style, duration=60):
 st.title("Rhythm Maker")
 st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate your own music with AI.</p>', unsafe_allow_html=True)
 
-col1, col2, col3, col4 = st.columns(4)
-
-# Wrap your buttons in a container div
 st.markdown('<div class="button-container">', unsafe_allow_html=True)
+col1, col2, col3, col4 = st.columns(4)
 if col1.button("Jazz"):
     selected_style = "jazz"
 if col2.button("Rock"):
@@ -108,7 +111,7 @@ if 'selected_style' in locals():
     )
 
 # Center the "Make New Song" button
-st.markdown('<div class="button-container">', unsafe_allow_html=True)
+st.markdown('<div class="make-new-song-container">', unsafe_allow_html=True)
 if st.button("Make New Song"):
     st.rerun()
 st.markdown('</div>', unsafe_allow_html=True)
