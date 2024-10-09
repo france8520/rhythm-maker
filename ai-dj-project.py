@@ -67,10 +67,8 @@ h1 {
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("""
-<div class="bubble-container"></div>
-<h1>Rhythm Maker</h1>
-""", unsafe_allow_html=True)
+st.markdown('<div class="bubble-container"></div>', unsafe_allow_html=True)
+
 
 # Add JavaScript for bubble animation
 st.markdown("""
@@ -137,11 +135,25 @@ def generate_song(style, duration=60):
 st.title("Rhythm Maker")
 st.write("Welcome to the AI DJ Project! Generate your own music with AI.")
 
-styles = ["jazz", "rock", "electronic", "classical"]
-cols = st.columns([1, 1, 1, 1])
-for i, style in enumerate(styles):
-    if cols[i].button(style.capitalize(), key=style):
+st.markdown("""
+<style>
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 5px;  /* Adjust this value to control the gap */
+}
+.stButton {
+    margin: 0;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Wrap your buttons in a container div
+st.markdown('<div class="button-container">', unsafe_allow_html=True)
+for style in ["jazz", "rock", "electronic", "classical"]:
+    if st.button(style.capitalize()):
         selected_style = style
+st.markdown('</div>', unsafe_allow_html=True)
 
 if 'selected_style' in locals():
     with st.spinner("Generating your song..."):
