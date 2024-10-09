@@ -25,12 +25,18 @@ h1 {
 }
 .button-container {
     display: flex;
-    gap: 10px;
+    justify-content: center;
+    gap: 5px;
 }
 .stButton > button {
     color: #4B0082;
     background-color: white;
     font-weight: bold;
+}
+.centered-button {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -78,11 +84,9 @@ st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate you
 
 # Wrap your buttons in a container div
 st.markdown('<div class="button-container">', unsafe_allow_html=True)
-cols = st.columns(4)
-for i, style in enumerate(["jazz", "rock", "electronic", "classical"]):
-    with cols[i]:
-        if st.button(style.capitalize()):
-            selected_style = style
+for style in ["jazz", "rock", "electronic", "classical"]:
+    if st.button(style.capitalize()):
+        selected_style = style
 st.markdown('</div>', unsafe_allow_html=True)
 
 if 'selected_style' in locals():
@@ -98,5 +102,8 @@ if 'selected_style' in locals():
         mime="audio/wav"
     )
 
+# Center the "Make New Song" button
+st.markdown('<div class="centered-button">', unsafe_allow_html=True)
 if st.button("Make New Song"):
     st.rerun()
+st.markdown('</div>', unsafe_allow_html=True)
