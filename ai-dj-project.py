@@ -28,9 +28,21 @@ h1 {
     margin-bottom: 30px;
 }
 .stButton > button {
-    color: #4B0082;
-    background-color: white;
+    margin: 5px;
+    padding: 15px 30px;
+    font-size: 18px;
+    cursor: pointer;
+    background: #ffffff;
+    border: none;
+    color: #8A2BE2;
     font-weight: bold;
+    border-radius: 30px;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(138, 43, 226, 0.5);
+}
+.stButton > button:hover {
+    transform: translateY(-5px) scale(1.1);
+    box-shadow: 0 8px 20px rgba(138, 43, 226, 0.8);
 }
 .bubble-container {
     position: fixed;
@@ -71,8 +83,11 @@ st.markdown("""
 <script>
 function createBubbles() {
     const bubbleContainer = document.querySelector('.bubble-container');
+    if (!bubbleContainer) {
+        console.error('Bubble container not found');
+        return;
+    }
     const bubbleCount = 50;
-
     for (let i = 0; i < bubbleCount; i++) {
         const bubble = document.createElement('div');
         bubble.classList.add('bubble');
@@ -84,7 +99,7 @@ function createBubbles() {
         bubbleContainer.appendChild(bubble);
     }
 }
-window.addEventListener('load', createBubbles);
+document.addEventListener('DOMContentLoaded', createBubbles);
 </script>
 """, unsafe_allow_html=True)
 
