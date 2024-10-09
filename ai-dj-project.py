@@ -12,13 +12,15 @@ with open('templates/index.html', 'r') as file:
     html_content = file.read()
     css_content = html_content.split('<style>')[1].split('</style>')[0]
 
-st.markdown(f"""
+st.set_page_config(page_title="Rhythm Maker", layout="wide")
+
+st.markdown("""
 <style>
-{css_content}
-body {{
+body {
     background: linear-gradient(90deg, #8A2BE2 0%, #4B0082 30%, #000000 100%);
-}}
-.bubble-container {{
+    color: white;
+}
+.bubble-container {
     position: fixed;
     top: 0;
     left: 0;
@@ -27,17 +29,34 @@ body {{
     overflow: hidden;
     pointer-events: none;
     z-index: -1;
-}}
+}
+.bubble {
+    position: absolute;
+    bottom: -100px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    opacity: 0.5;
+    animation: rise 10s infinite ease-in;
+}
+@keyframes rise {
+    0% {
+        bottom: -100px;
+        transform: translateX(0);
+    }
+    50% {
+        transform: translate(100px, -500px);
+    }
+    100% {
+        bottom: 1080px;
+        transform: translateX(-200px);
+    }
+}
 </style>
 <div class="bubble-container"></div>
-""", unsafe_allow_html=True)
-
-st.markdown("""
 <script>
 function createBubbles() {
     const bubbleContainer = document.querySelector('.bubble-container');
     const bubbleCount = 50;
-
     for (let i = 0; i < bubbleCount; i++) {
         const bubble = document.createElement('div');
         bubble.classList.add('bubble');
@@ -49,7 +68,7 @@ function createBubbles() {
         bubbleContainer.appendChild(bubble);
     }
 }
-window.addEventListener('load', createBubbles);
+window.onload = createBubbles;
 </script>
 """, unsafe_allow_html=True)
 
