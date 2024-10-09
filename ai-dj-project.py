@@ -7,10 +7,6 @@ import numpy as np
 # Set page config first
 st.set_page_config(page_title="Rhythm Maker", layout="wide")
 
-# Now load CSS and apply it
-with open('templates/index.html', 'r') as file:
-    html_content = file.read()
-    css_content = html_content.split('<style>')[1].split('</style>')[0]
 
 st.markdown("""
 <style>
