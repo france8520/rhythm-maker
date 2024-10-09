@@ -8,17 +8,31 @@ import numpy as np
 st.set_page_config(page_title="Rhythm Maker", layout="wide")
 
 
-
 st.markdown("""
 <style>
 .stApp {
     background: linear-gradient(90deg, #8A2BE2 0%, #4B0082 30%, #000000 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
 }
 .stApp > header {
     background-color: transparent;
 }
 .stApp {
     color: white !important;
+}
+h1 {
+    color: white;
+    text-shadow: 0 0 10px #8A2BE2, 0 0 20px #8A2BE2, 0 0 30px #8A2BE2;
+    font-size: 3em;
+    margin-bottom: 30px;
+}
+.stButton > button {
+    color: #4B0082;
+    background-color: white;
+    font-weight: bold;
 }
 .bubble-container {
     position: fixed;
@@ -52,25 +66,9 @@ st.markdown("""
     }
 }
 </style>
-<div class="bubble-container"></div>
-<script>
-function createBubbles() {
-    const bubbleContainer = document.querySelector('.bubble-container');
-    const bubbleCount = 50;
-    for (let i = 0; i < bubbleCount; i++) {
-        const bubble = document.createElement('div');
-        bubble.classList.add('bubble');
-        bubble.style.left = `${Math.random() * 100}%`;
-        bubble.style.width = `${Math.random() * 30 + 10}px`;
-        bubble.style.height = bubble.style.width;
-        bubble.style.animationDuration = `${Math.random() * 15 + 5}s`;
-        bubble.style.animationDelay = `${Math.random() * 5}s`;
-        bubbleContainer.appendChild(bubble);
-    }
-}
-document.addEventListener('DOMContentLoaded', createBubbles);
-</script>
 """, unsafe_allow_html=True)
+
+st.markdown("<h1>Rhythm Maker</h1>", unsafe_allow_html=True)
 
 
 os.environ['HF_TOKEN'] = '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'
