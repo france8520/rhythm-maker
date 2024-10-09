@@ -3,6 +3,7 @@ import os
 import torch
 from transformers import AutoProcessor, MusicgenForConditionalGeneration
 import numpy as np
+
 # Set page config first
 st.set_page_config(page_title="Rhythm Maker", layout="wide")
 
@@ -68,6 +69,11 @@ h1 {
 
 st.markdown("""
 <div class="bubble-container"></div>
+<h1>Rhythm Maker</h1>
+""", unsafe_allow_html=True)
+
+# Add JavaScript for bubble animation
+st.markdown("""
 <script>
 function createBubbles() {
     const bubbleContainer = document.querySelector('.bubble-container');
@@ -84,7 +90,7 @@ function createBubbles() {
         bubbleContainer.appendChild(bubble);
     }
 }
-window.addEventListener('load', createBubbles);
+document.addEventListener('DOMContentLoaded', createBubbles);
 </script>
 """, unsafe_allow_html=True)
 
@@ -132,9 +138,9 @@ st.title("Rhythm Maker")
 st.write("Welcome to the AI DJ Project! Generate your own music with AI.")
 
 styles = ["jazz", "rock", "electronic", "classical"]
-cols = st.columns(len(styles))
+cols = st.columns([1, 1, 1, 1])
 for i, style in enumerate(styles):
-    if cols[i].button(style.capitalize()):
+    if cols[i].button(style.capitalize(), key=style):
         selected_style = style
 
 if 'selected_style' in locals():
