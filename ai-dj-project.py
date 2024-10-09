@@ -2,13 +2,20 @@ import os
 import torch
 from transformers import AutoProcessor, MusicgenForConditionalGeneration
 import numpy as np
+import streamlit as st
 import wave
-import struct
-from flask import Flask, render_template, request, jsonify, send_file, Response, stream_with_context
 
 os.environ['HF_TOKEN'] = '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'
 
-app = Flask(__name__)
+# Load CSS from index.html
+with open('templates/index.html', 'r') as file:
+    html_content = file.read()
+    css_content = html_content.split('<style>')[1].split('</style>')[0]
+
+st.set_page_config(page_title="Rhythm Maker", layout="wide")
+
+# Apply custom CSS
+st.markdown(f'<style>{css_content}</style>', unsafe_allow_html=True)
 
 class AdvancedAIDJ:
     def __init__(self):
@@ -44,12 +51,8 @@ class AdvancedAIDJ:
         self.last_generated_audio = audio_data
         self.last_sampling_rate = sampling_rate
         
-        for i in range(0, 101, 2):
-            yield f"data:{i}\n\n"
-            if i % 10 == 0:
-                print(f"Generation progress: {i}%")
-        
-        return audio_data, sampling_rate    
+        return audio_data, sampling_rate
+
     def export_song(self, style, filename="generated_song.wav"):
         audio_data = self.last_generated_audio
         sampling_rate = self.last_sampling_rate
@@ -66,29 +69,57 @@ class AdvancedAIDJ:
 
 ai_dj = AdvancedAIDJ()
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+# HTML structure from index.html
+st.markdown("""
+<div class="bubble-container"></div>
+<h1>Rhythm Maker</h1>
+""", unsafe_allow_html=True)
 
-@app.route('/generate', methods=['GET'])
-def generate():
-    style = request.args.get('style', 'jazz')
-    filename = f"{style}_song.wav"
+# Style buttons
+styles = ["jazz", "rock", "electronic", "classical"]
+cols = st.columns(len(styles))
+for i, style in enumerate(styles):
+    if cols[i].button(style.capitalize()):
+        selected_style = style
 
-    def generate_stream():
-        for progress in ai_dj.generate_song(style):
-            yield progress
-        yield f"data:100\n\n"
-        exported_filename = ai_dj.export_song(style, filename)
-        yield f"data:DONE:{exported_filename}\n\n"
+st.markdown('<div id="analyzingText" style="display:none;"><p>AI is analyzing and creating your unique rhythm...</p></div>', unsafe_allow_html=True)
 
-    return Response(stream_with_context(generate_stream()), content_type='text/event-stream')
+if 'selected_style' in locals():
+    with st.spinner("Generating your song..."):
+        audio_data, sampling_rate = ai_dj.generate_song(selected_style)
+    
+    st.audio(audio_data, format='audio/wav', sample_rate=sampling_rate)
+    
+    st.markdown("""
+    <div id="downloadButton">
+        <button onclick="location.href='#'">Download Song</button>
+    </div>
+    """, unsafe_allow_html=True)
 
-@app.route('/download/<filename>')
-def download(filename):
-    return send_file(filename, as_attachment=True)
+st.markdown("""
+<div>
+    <button onclick="location.reload()">Make New Song</button>
+</div>
+""", unsafe_allow_html=True)
 
+# Add JavaScript for bubble animation
+st.markdown("""
+<script>
+function createBubbles() {
+    const bubbleContainer = document.querySelector('.bubble-container');
+    const bubbleCount = 50;
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    for (let i = 0; i < bubbleCount; i++) {
+        const bubble = document.createElement('div');
+        bubble.classList.add('bubble');
+        bubble.style.left = `${Math.random() * 100}%`;
+        bubble.style.width = `${Math.random() * 30 + 10}px`;
+        bubble.style.height = bubble.style.width;
+        bubble.style.animationDuration = `${Math.random() * 15 + 5}s`;
+        bubble.style.animationDelay = `${Math.random() * 5}s`;
+        bubbleContainer.appendChild(bubble);
+    }
+}
+window.addEventListener('load', createBubbles);
+</script>
+""", unsafe_allow_html=True)
