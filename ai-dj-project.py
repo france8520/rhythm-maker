@@ -3,7 +3,7 @@ import os
 import torch
 from transformers import AutoProcessor, MusicgenForConditionalGeneration
 import numpy as np
-
+import time
 # Set page config first
 st.set_page_config(page_title="Rhythm Maker", layout="wide")
 st.markdown("""
@@ -93,10 +93,24 @@ st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate you
 selected_style = st.selectbox("Choose a music style", ["Jazz", "Rock", "Electronic", "Classical"])
 
 if st.button("Generate Song"):
+    with st.spinner("Preparing to generate your song..."):
+        # Add a small delay to ensure the spinner is visible
+        time.sleep(1)
+    
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+
     try:
-        with st.spinner("Generating your song..."):
-            audio_data, sampling_rate = generate_song(selected_style.lower())
+        for i in range(10):  # Simulate progress
+            status_text.text(f"Generating song... Step {i+1}/10")
+            progress_bar.progress((i + 1) * 10)
+            time.sleep(0.5)  # Simulate work being done
+
+        audio_data, sampling_rate = generate_song(selected_style.lower())
         
+        status_text.text("Song generated successfully!")
+        progress_bar.progress(100)
+
         st.audio(audio_data, format='audio/wav', sample_rate=sampling_rate)
         
         st.download_button(
@@ -107,6 +121,10 @@ if st.button("Generate Song"):
         )
     except Exception as e:
         st.error(f"An error occurred while generating the song: {str(e)}")
+
+    # Clear the progress bar and status text after completion or error
+    progress_bar.empty()
+    status_text.empty()
 
 if st.button("Make New Song"):
     st.rerun()
