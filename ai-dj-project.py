@@ -78,7 +78,7 @@ def load_model():
 
 model, processor, device = load_model()
 
-def generate_song(style, duration=5):
+def generate_song(style, duration=120):
     try:
         prompt = f"Short {style} melody"
         inputs = processor(
