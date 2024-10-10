@@ -148,6 +148,5 @@ if st.button("Generate Song"):
     progress_bar.empty()
     status_text.empty()
 
-if st.button("Make New Song"):
-    st.session_state.song_generated = False
-    st.rerun()
+if st.session_state.song_generated:
+    st.info("To generate a new song, please refresh the page.")
