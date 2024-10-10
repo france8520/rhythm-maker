@@ -6,7 +6,7 @@ import numpy as np
 import time
 import io
 import wave
-
+import logging
 # Set page config first
 st.set_page_config(page_title="Rhythm Maker", layout="wide")
 st.markdown("""
@@ -60,43 +60,56 @@ div[data-testid="stHorizontalBlock"] {
 
 os.environ['HF_TOKEN'] = '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'
 
+logging.basicConfig(level=logging.INFO)
+
 @st.cache_resource
 def load_model():
     try:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        logging.info(f"Using device: {device}")
         model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-melody", token=os.environ['HF_TOKEN'], attn_implementation="eager").to(device)
         processor = AutoProcessor.from_pretrained("facebook/musicgen-melody", token=os.environ['HF_TOKEN'])
+        logging.info("Model and processor loaded successfully")
         return model, processor, device
     except Exception as e:
+        logging.error(f"Error loading model: {str(e)}")
         st.error(f"Error loading model: {str(e)}")
         return None, None, None
 
 model, processor, device = load_model()
 
 def generate_song(style, duration=5):
-    prompt = f"Short {style} melody"
-    inputs = processor(
-        text=[prompt],
-        padding=True,
-        return_tensors="pt",
-    ).to(device)
-    
-    sampling_rate = 32000
-    total_samples = duration * sampling_rate
-    max_new_tokens = min(int(total_samples / 1024), 256)
-    
-    audio_values = model.generate(
-        **inputs,
-        max_new_tokens=max_new_tokens,
-        do_sample=True,
-        guidance_scale=2.0,
-        temperature=1.0
-    )
-    
-    audio_data = audio_values[0].cpu().numpy()
-    audio_data = (audio_data * 32767).astype(np.int16)
-    
-    return audio_data, sampling_rate
+    try:
+        prompt = f"Short {style} melody"
+        inputs = processor(
+            text=[prompt],
+            padding=True,
+            return_tensors="pt",
+        ).to(device)
+        
+        sampling_rate = 32000
+        total_samples = duration * sampling_rate
+        max_new_tokens = min(int(total_samples / 1024), 256)
+        
+        logging.info(f"Generating song with style: {style}, duration: {duration}s")
+        audio_values = model.generate(
+            **inputs,
+            max_new_tokens=max_new_tokens,
+            do_sample=True,
+            guidance_scale=2.0,
+            temperature=1.0
+        )
+        
+        audio_data = audio_values[0].cpu().numpy()
+        audio_data = (audio_data * 32767).astype(np.int16)
+        
+        logging.info("Song generated successfully")
+        return audio_data, sampling_rate
+    except Exception as e:
+        logging.error(f"Error generating song: {str(e)}")
+        st.error(f"Error generating song: {str(e)}")
+        return None, None
+
 
 st.title("Rhythm Maker")
 st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate your own music with AI.</p>', unsafe_allow_html=True)
