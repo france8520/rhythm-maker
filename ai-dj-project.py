@@ -4,6 +4,9 @@ import torch
 from transformers import AutoProcessor, MusicgenForConditionalGeneration
 import numpy as np
 import time
+from pydub import AudioSegment
+import io
+
 # Set page config first
 st.set_page_config(page_title="Rhythm Maker", layout="wide")
 st.markdown("""
@@ -40,6 +43,18 @@ div[data-testid="stHorizontalBlock"] {
 .stButton > button {
     min-width: 100px;
 }
+.download-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 12px;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -70,8 +85,6 @@ def generate_song(style, duration=60):
     total_samples = duration * sampling_rate
     max_new_tokens = min(int(total_samples / 256), 1024)
     
-    progress_bar = st.progress(0)
-    
     audio_values = model.generate(
         **inputs,
         max_new_tokens=max_new_tokens,
@@ -80,31 +93,32 @@ def generate_song(style, duration=60):
         temperature=0.8
     )
     
-    progress_bar.progress(1.0)  # Set progress to 100% after generation
-    
     audio_data = audio_values[0].cpu().numpy()
-    audio_data = audio_data / np.max(np.abs(audio_data))
+    audio_data = (audio_data * 32767).astype(np.int16)
     
     return audio_data, sampling_rate
 
 st.title("Rhythm Maker")
 st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate your own music with AI.</p>', unsafe_allow_html=True)
 
+if 'song_generated' not in st.session_state:
+    st.session_state.song_generated = False
+
 selected_style = st.selectbox("Choose a music style", ["Jazz", "Rock", "Electronic", "Classical"])
 
 if st.button("Generate Song"):
+    st.session_state.song_generated = False
     with st.spinner("Preparing to generate your song..."):
-        # Add a small delay to ensure the spinner is visible
         time.sleep(1)
     
     progress_bar = st.progress(0)
     status_text = st.empty()
 
     try:
-        for i in range(10):  # Simulate progress
+        for i in range(10):
             status_text.text(f"Generating song... Step {i+1}/10")
             progress_bar.progress((i + 1) * 10)
-            time.sleep(0.5)  # Simulate work being done
+            time.sleep(0.5)
 
         audio_data, sampling_rate = generate_song(selected_style.lower())
         
@@ -113,18 +127,31 @@ if st.button("Generate Song"):
 
         st.audio(audio_data, format='audio/wav', sample_rate=sampling_rate)
         
-        st.download_button(
-            label="Download Song",
-            data=audio_data.tobytes(),
-            file_name=f"{selected_style.lower()}_song.wav",
-            mime="audio/wav"
+        # Convert to MP3
+        audio = AudioSegment(
+            audio_data.tobytes(), 
+            frame_rate=sampling_rate, 
+            sample_width=2, 
+            channels=1
         )
+        
+        buffer = io.BytesIO()
+        audio.export(buffer, format="mp3")
+        
+        st.download_button(
+            label="Download Song (MP3)",
+            data=buffer.getvalue(),
+            file_name=f"{selected_style.lower()}_song.mp3",
+            mime="audio/mpeg",
+            key="download_button"
+        )
+        st.session_state.song_generated = True
     except Exception as e:
         st.error(f"An error occurred while generating the song: {str(e)}")
 
-    # Clear the progress bar and status text after completion or error
     progress_bar.empty()
     status_text.empty()
 
 if st.button("Make New Song"):
+    st.session_state.song_generated = False
     st.rerun()
