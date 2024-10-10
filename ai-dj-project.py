@@ -10,7 +10,10 @@ import matplotlib.pyplot as plt
 from moviepy.editor import AudioFileClip, ImageClip, CompositeVideoClip
 import logging
 
-# Set page config first
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+
+# Streamlit configuration
 st.set_page_config(page_title="Rhythm Maker", layout="wide")
 st.markdown("""
 <style>
@@ -61,17 +64,14 @@ div[data-testid="stHorizontalBlock"] {
 </style>
 """, unsafe_allow_html=True)
 
-os.environ['HF_TOKEN'] = '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'
-
-logging.basicConfig(level=logging.INFO)
-
+# Load model function with error handling
 @st.cache_resource
 def load_model():
     try:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         logging.info(f"Using device: {device}")
-        model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small", token=os.environ['HF_TOKEN'], attn_implementation="eager").to(device)
-        processor = AutoProcessor.from_pretrained("facebook/musicgen-small", token=os.environ['HF_TOKEN'])
+        model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small", token=os.environ.get('HF_TOKEN'), attn_implementation="eager").to(device)
+        processor = AutoProcessor.from_pretrained("facebook/musicgen-small", token=os.environ.get('HF_TOKEN'))
         logging.info("Model and processor loaded successfully")
         return model, processor, device
     except Exception as e:
@@ -79,6 +79,7 @@ def load_model():
         st.error(f"Error loading model: {str(e)}")
         return None, None, None
 
+# Load model at startup
 model, processor, device = load_model()
 
 def generate_song(style, duration=15):
@@ -128,19 +129,33 @@ def create_video(audio_data, sampling_rate, style):
     video.write_videofile(f"{style}_music_video.mp4", fps=24)
     return f"{style}_music_video.mp4"
 
-st.title("Rhythm Maker")
-st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate your own music with AI.</p>', unsafe_allow_html=True)
+# Main app logic
+def main():
+    st.title("Rhythm Maker")
+    st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate your own music with AI.</p>', unsafe_allow_html=True)
 
-selected_style = st.selectbox("Choose a music style", ["Jazz", "Rock", "Electronic", "Classical"])
+    selected_style = st.selectbox("Choose a music style", ["Jazz", "Rock", "Electronic", "Classical"])
 
-if st.button("Generate Music Video"):
-    with st.spinner("Generating your music video..."):
-        audio_data, sampling_rate = generate_song(selected_style.lower())
-        if audio_data is not None and sampling_rate is not None:
-            video_file = create_video(audio_data, sampling_rate, selected_style.lower())
-            st.video(video_file)
-            st.download_button("Download Video", video_file, file_name=f"{selected_style}_music_video.mp4")
-        else:
-            st.error("Failed to generate audio. Please try again.")
+    if st.button("Generate Music Video"):
+        if model is None or processor is None or device is None:
+            st.error("Model failed to load. Please try again later.")
+            return
 
-st.info("To generate a new video, please refresh the page.")
+        with st.spinner("Generating your music video..."):
+            try:
+                audio_data, sampling_rate = generate_song(selected_style.lower())
+                if audio_data is not None and sampling_rate is not None:
+                    video_file = create_video(audio_data, sampling_rate, selected_style.lower())
+                    st.video(video_file)
+                    st.download_button("Download Video", video_file, file_name=f"{selected_style}_music_video.mp4")
+                else:
+                    st.error("Failed to generate audio. Please try again.")
+            except Exception as e:
+                logging.error(f"Error during music video generation: {str(e)}")
+                st.error("An error occurred during music video generation. Please try again.")
+
+    st.info("To generate a new video, please refresh the page.")
+
+# Run the main function
+if __name__ == "__main__":
+    main()
