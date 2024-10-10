@@ -4,8 +4,8 @@ import torch
 from transformers import AutoProcessor, MusicgenForConditionalGeneration
 import numpy as np
 import time
-from pydub import AudioSegment
 import io
+import wave
 
 # Set page config first
 st.set_page_config(page_title="Rhythm Maker", layout="wide")
@@ -127,23 +127,19 @@ if st.button("Generate Song"):
 
         st.audio(audio_data, format='audio/wav', sample_rate=sampling_rate)
         
-        # Convert to MP3
-        audio = AudioSegment(
-            audio_data.tobytes(), 
-            frame_rate=sampling_rate, 
-            sample_width=2, 
-            channels=1
-        )
-        
+        # Convert to WAV
         buffer = io.BytesIO()
-        audio.export(buffer, format="mp3")
+        with wave.open(buffer, 'wb') as wav_file:
+            wav_file.setnchannels(1)
+            wav_file.setsampwidth(2)
+            wav_file.setframerate(sampling_rate)
+            wav_file.writeframes(audio_data.tobytes())
         
         st.download_button(
-            label="Download Song (MP3)",
+            label="Download Song (WAV)",
             data=buffer.getvalue(),
-            file_name=f"{selected_style.lower()}_song.mp3",
-            mime="audio/mpeg",
-            key="download_button"
+            file_name=f"{selected_style.lower()}_song.wav",
+            mime="audio/wav"
         )
         st.session_state.song_generated = True
     except Exception as e:
