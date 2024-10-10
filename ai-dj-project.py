@@ -77,9 +77,10 @@ def generate_song(style, duration=60):
         max_new_tokens=max_new_tokens,
         do_sample=True,
         guidance_scale=3.5,
-        temperature=0.8,
-        callback=lambda _, step, __: progress_bar.progress(step / max_new_tokens)
+        temperature=0.8
     )
+    
+    progress_bar.progress(1.0)  # Set progress to 100% after generation
     
     audio_data = audio_values[0].cpu().numpy()
     audio_data = audio_data / np.max(np.abs(audio_data))
