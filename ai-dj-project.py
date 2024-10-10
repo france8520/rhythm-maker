@@ -67,8 +67,8 @@ def load_model():
     try:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         logging.info(f"Using device: {device}")
-        model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-melody", token=os.environ['HF_TOKEN'], attn_implementation="eager").to(device)
-        processor = AutoProcessor.from_pretrained("facebook/musicgen-melody", token=os.environ['HF_TOKEN'])
+        model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small", token=os.environ['HF_TOKEN'], attn_implementation="eager").to(device)
+        processor = AutoProcessor.from_pretrained("facebook/musicgen-small", token=os.environ['HF_TOKEN'])
         logging.info("Model and processor loaded successfully")
         return model, processor, device
     except Exception as e:
