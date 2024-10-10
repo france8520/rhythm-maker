@@ -65,7 +65,6 @@ def load_model():
     try:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small", token=os.environ['HF_TOKEN'], attn_implementation="eager").to(device)
-        model = model.half()        
         processor = AutoProcessor.from_pretrained("facebook/musicgen-small", token=os.environ['HF_TOKEN'])
         return model, processor, device
     except Exception as e:
@@ -74,8 +73,8 @@ def load_model():
 
 model, processor, device = load_model()
 
-def generate_song(style, duration=60):
-    prompt = f"Create an engaging {style} song with a catchy melody and rhythm"
+def generate_song(style, duration=5):
+    prompt = f"Short {style} melody"
     inputs = processor(
         text=[prompt],
         padding=True,
@@ -84,14 +83,14 @@ def generate_song(style, duration=60):
     
     sampling_rate = 32000
     total_samples = duration * sampling_rate
-    max_new_tokens = min(int(total_samples / 512), 512)
+    max_new_tokens = min(int(total_samples / 1024), 256)
     
     audio_values = model.generate(
         **inputs,
         max_new_tokens=max_new_tokens,
         do_sample=True,
-        temperature=0.7,
-        guidance_scale=3.0,
+        guidance_scale=2.0,
+        temperature=1.0
     )
     
     audio_data = audio_values[0].cpu().numpy()
