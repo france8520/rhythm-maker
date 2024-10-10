@@ -6,11 +6,6 @@ import numpy as np
 
 # Set page config first
 st.set_page_config(page_title="Rhythm Maker", layout="wide")
-<<<<<<< HEAD
-=======
-
-
->>>>>>> parent of c8c5817e (Last time)
 st.markdown("""
 <style>
 .stApp {
@@ -27,20 +22,10 @@ h1 {
 .centered-text {
     text-align: center;
 }
-<<<<<<< HEAD
-=======
-.button-container {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 20px;
-}
->>>>>>> parent of c8c5817e (Last time)
 .stButton > button {
     color: #4B0082;
     background-color: white;
     font-weight: bold;
-<<<<<<< HEAD
     width: 100%;
 }
 div[data-testid="stHorizontalBlock"] {
@@ -54,9 +39,6 @@ div[data-testid="stHorizontalBlock"] {
 }
 .stButton > button {
     min-width: 100px;
-=======
-    width: 120px;  /* Set a fixed width for all buttons */
->>>>>>> parent of c8c5817e (Last time)
 }
 </style>
 """, unsafe_allow_html=True)
@@ -121,14 +103,8 @@ def generate_song(style, duration=60):
 st.title("Rhythm Maker")
 st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate your own music with AI.</p>', unsafe_allow_html=True)
 
-<<<<<<< HEAD
 
-=======
->>>>>>> parent of c8c5817e (Last time)
 col1, col2, col3, col4 = st.columns(4)
-
-# Wrap your buttons in a container div
-st.markdown('<div class="button-container">', unsafe_allow_html=True)
 if col1.button("Jazz"):
     selected_style = "jazz"
 if col2.button("Rock"):
@@ -152,10 +128,6 @@ if 'selected_style' in locals():
         mime="audio/wav"
     )
 
-<<<<<<< HEAD
-=======
-# Center the "Make New Song" button
->>>>>>> parent of c8c5817e (Last time)
 st.markdown('<div class="button-container">', unsafe_allow_html=True)
 if st.button("Make New Song"):
     st.rerun()
