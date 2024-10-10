@@ -64,8 +64,8 @@ os.environ['HF_TOKEN'] = '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'
 def load_model():
     try:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small", token=os.environ['HF_TOKEN'], attn_implementation="eager").to(device)
-        processor = AutoProcessor.from_pretrained("facebook/musicgen-small", token=os.environ['HF_TOKEN'])
+        model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-melody", token=os.environ['HF_TOKEN'], attn_implementation="eager").to(device)
+        processor = AutoProcessor.from_pretrained("facebook/musicgen-melody", token=os.environ['HF_TOKEN'])
         return model, processor, device
     except Exception as e:
         st.error(f"Error loading model: {str(e)}")
