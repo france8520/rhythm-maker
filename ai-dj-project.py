@@ -6,7 +6,6 @@ import numpy as np
 
 # Set page config first
 st.set_page_config(page_title="Rhythm Maker", layout="wide")
-
 st.markdown("""
 <style>
 .stApp {
@@ -32,6 +31,15 @@ h1 {
 div[data-testid="stHorizontalBlock"] {
     gap: 0rem !important;
 }
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.stButton > button {
+    min-width: 100px;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -45,6 +53,25 @@ def load_model():
     return model, processor, device
 
 model, processor, device = load_model()
+st.markdown('<div class="button-container">', unsafe_allow_html=True)
+if st.button("Jazz"):
+    selected_style = "jazz"
+if st.button("Rock"):
+    selected_style = "rock"
+if st.button("Electronic"):
+    selected_style = "electronic"
+if st.button("Classical"):
+    selected_style = "classical"
+    
+st.markdown('</div>', unsafe_allow_html=True)
+model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small", token=os.environ['HF_TOKEN'], attn_implementation="eager").to(device)
+processor = AutoProcessor.from_pretrained("facebook/musicgen-small", token=os.environ['HF_TOKEN'])
+def load_model():
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small", token=os.environ['HF_TOKEN'], attn_implementation="eager").to(device)
+    processor = AutoProcessor.from_pretrained("facebook/musicgen-small", token=os.environ['HF_TOKEN'])
+    return model, processor, device
+
 
 def generate_song(style, duration=60):
     prompt = f"Create an engaging {style} song with a catchy melody and rhythm"
@@ -101,8 +128,7 @@ if 'selected_style' in locals():
         mime="audio/wav"
     )
 
-# Center the "Make New Song" button
-_, center_col, _ = st.columns([1,2,1])
-with center_col:
-    if st.button("Make New Song"):
-        st.rerun()
+st.markdown('<div class="button-container">', unsafe_allow_html=True)
+if st.button("Make New Song"):
+    st.rerun()
+st.markdown('</div>', unsafe_allow_html=True)
