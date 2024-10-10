@@ -6,7 +6,10 @@ import numpy as np
 import time
 import io
 import wave
+import matplotlib.pyplot as plt
+from moviepy.editor import AudioFileClip, ImageClip, CompositeVideoClip
 import logging
+
 # Set page config first
 st.set_page_config(page_title="Rhythm Maker", layout="wide")
 st.markdown("""
@@ -78,9 +81,9 @@ def load_model():
 
 model, processor, device = load_model()
 
-def generate_song(style, duration=120):
+def generate_song(style, duration=15):
     try:
-        prompt = f"Short {style} melody"
+        prompt = f"Create an engaging {style} song with a catchy melody and rhythm"
         inputs = processor(
             text=[prompt],
             padding=True,
@@ -89,14 +92,14 @@ def generate_song(style, duration=120):
         
         sampling_rate = 32000
         total_samples = duration * sampling_rate
-        max_new_tokens = min(int(total_samples / 1024), 256)
+        max_new_tokens = min(int(total_samples / 512), 512)
         
         logging.info(f"Generating song with style: {style}, duration: {duration}s")
         audio_values = model.generate(
             **inputs,
             max_new_tokens=max_new_tokens,
             do_sample=True,
-            guidance_scale=2.0,
+            guidance_scale=3.0,
             temperature=1.0
         )
         
@@ -110,56 +113,34 @@ def generate_song(style, duration=120):
         st.error(f"Error generating song: {str(e)}")
         return None, None
 
+def create_video(audio_data, sampling_rate, style):
+    plt.figure(figsize=(10, 5))
+    plt.plot(audio_data)
+    plt.title(f"{style.capitalize()} Music Visualization")
+    plt.axis('off')
+    plt.tight_layout()
+    plt.savefig('temp_waveform.png')
+    plt.close()
+
+    audio_clip = AudioFileClip.AudioArrayClip(audio_data, fps=sampling_rate)
+    image_clip = ImageClip('temp_waveform.png').set_duration(audio_clip.duration)
+    video = CompositeVideoClip([image_clip, audio_clip])
+    video.write_videofile(f"{style}_music_video.mp4", fps=24)
+    return f"{style}_music_video.mp4"
 
 st.title("Rhythm Maker")
 st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate your own music with AI.</p>', unsafe_allow_html=True)
 
-if 'song_generated' not in st.session_state:
-    st.session_state.song_generated = False
-
 selected_style = st.selectbox("Choose a music style", ["Jazz", "Rock", "Electronic", "Classical"])
 
-if st.button("Generate Song"):
-    st.session_state.song_generated = False
-    with st.spinner("Preparing to generate your song..."):
-        time.sleep(1)
-    
-    progress_bar = st.progress(0)
-    status_text = st.empty()
-
-    try:
-        for i in range(10):
-            status_text.text(f"Generating song... Step {i+1}/10")
-            progress_bar.progress((i + 1) * 10)
-            time.sleep(0.5)
-
+if st.button("Generate Music Video"):
+    with st.spinner("Generating your music video..."):
         audio_data, sampling_rate = generate_song(selected_style.lower())
-        
-        status_text.text("Song generated successfully!")
-        progress_bar.progress(100)
+        if audio_data is not None and sampling_rate is not None:
+            video_file = create_video(audio_data, sampling_rate, selected_style.lower())
+            st.video(video_file)
+            st.download_button("Download Video", video_file, file_name=f"{selected_style}_music_video.mp4")
+        else:
+            st.error("Failed to generate audio. Please try again.")
 
-        st.audio(audio_data, format='audio/wav', sample_rate=sampling_rate)
-        
-        # Convert to WAV
-        buffer = io.BytesIO()
-        with wave.open(buffer, 'wb') as wav_file:
-            wav_file.setnchannels(1)
-            wav_file.setsampwidth(2)
-            wav_file.setframerate(sampling_rate)
-            wav_file.writeframes(audio_data.tobytes())
-        
-        st.download_button(
-            label="Download Song (WAV)",
-            data=buffer.getvalue(),
-            file_name=f"{selected_style.lower()}_song.wav",
-            mime="audio/wav"
-        )
-        st.session_state.song_generated = True
-    except Exception as e:
-        st.error(f"An error occurred while generating the song: {str(e)}")
-
-    progress_bar.empty()
-    status_text.empty()
-
-if st.session_state.song_generated:
-    st.info("To generate a new song, please refresh the page.")
+st.info("To generate a new video, please refresh the page.")
