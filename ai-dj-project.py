@@ -52,6 +52,7 @@ def load_model():
     logging.info(f"Using device: {device}")
     model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small")
     processor = AutoProcessor.from_pretrained("facebook/musicgen-small")
+    model.to(device)
     logging.info("Model and processor loaded successfully")
     return model, processor, device
 
@@ -61,7 +62,7 @@ async def generate_song(style, duration, session_id):
         text=[prompt],
         padding=True,
         return_tensors="pt",
-    )
+    ).to(device)
     
     sampling_rate = 32000
     total_samples = duration * sampling_rate
@@ -92,7 +93,7 @@ def process_queue():
 
 def get_audio_download_link(audio_data, sampling_rate, filename):
     virtualfile = io.BytesIO()
-    wavfile.write(virtualfile, sampling_rate, audio_data.T)
+    wavfile.write(virtualfile, sampling_rate, audio_data)
     virtualfile.seek(0)
     b64 = base64.b64encode(virtualfile.getvalue()).decode()
     return f'<a href="data:audio/wav;base64,{b64}" download="{filename}">Download {filename}</a>'
@@ -126,7 +127,7 @@ def main():
             audio_data, sampling_rate = results[st.session_state.session_id]
             
             audio_buffer = io.BytesIO()
-            wavfile.write(audio_buffer, sampling_rate, audio_data.T)
+            wavfile.write(audio_buffer, sampling_rate, audio_data)
             audio_buffer.seek(0)
             
             st.audio(audio_buffer, format='audio/wav')
