@@ -6,6 +6,7 @@ import io
 import soundfile as sf
 import logging
 import base64
+from scipy.io import wavfile
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -77,7 +78,8 @@ def generate_song(style, duration=15):
 
 def get_audio_download_link(audio_data, sampling_rate, filename):
     virtualfile = io.BytesIO()
-    sf.write(virtualfile, audio_data, sampling_rate, format='wav')
+    wavfile.write(virtualfile, sampling_rate, audio_data.T)
+    virtualfile.seek(0)
     b64 = base64.b64encode(virtualfile.getvalue()).decode()
     return f'<a href="data:audio/wav;base64,{b64}" download="{filename}">Download {filename}</a>'
 
@@ -94,7 +96,7 @@ def main():
             
             # Create a BytesIO object to store the audio data
             audio_buffer = io.BytesIO()
-            sf.write(audio_buffer, audio_data, sampling_rate, format='wav')
+            wavfile.write(audio_buffer, sampling_rate, audio_data.T)
             audio_buffer.seek(0)
             
             # Display audio player
