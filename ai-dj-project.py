@@ -1,14 +1,11 @@
 import streamlit as st
-import os
 import torch
 from transformers import AutoProcessor, MusicgenForConditionalGeneration
 import numpy as np
-import time
 import io
-import wave
-import matplotlib.pyplot as plt
-from moviepy.editor import AudioFileClip, ImageClip, CompositeVideoClip
+import soundfile as sf
 import logging
+import base64
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -37,125 +34,74 @@ h1 {
     font-weight: bold;
     width: 100%;
 }
-div[data-testid="stHorizontalBlock"] {
-    gap: 0rem !important;
-}
-.button-container {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-.stButton > button {
-    min-width: 100px;
-}
-.download-button {
-    background-color: #4CAF50;
-    color: white;
-    padding: 10px 20px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    margin: 4px 2px;
-    cursor: pointer;
-    border-radius: 12px;
-}
 </style>
 """, unsafe_allow_html=True)
 
-# Load model function with error handling
 @st.cache_resource
 def load_model():
-    try:
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        logging.info(f"Using device: {device}")
-        model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small", token=os.environ.get('HF_TOKEN'), attn_implementation="eager").to(device)
-        processor = AutoProcessor.from_pretrained("facebook/musicgen-small", token=os.environ.get('HF_TOKEN'))
-        logging.info("Model and processor loaded successfully")
-        return model, processor, device
-    except Exception as e:
-        logging.error(f"Error loading model: {str(e)}")
-        st.error(f"Error loading model: {str(e)}")
-        return None, None, None
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    logging.info(f"Using device: {device}")
+    model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small")
+    processor = AutoProcessor.from_pretrained("facebook/musicgen-small")
+    logging.info("Model and processor loaded successfully")
+    return model, processor, device
 
-# Load model at startup
 model, processor, device = load_model()
 
 def generate_song(style, duration=15):
-    try:
-        prompt = f"Create an engaging {style} song with a catchy melody and rhythm"
-        inputs = processor(
-            text=[prompt],
-            padding=True,
-            return_tensors="pt",
-        ).to(device)
-        
-        sampling_rate = 32000
-        total_samples = duration * sampling_rate
-        max_new_tokens = min(int(total_samples / 512), 512)
-        
-        logging.info(f"Generating song with style: {style}, duration: {duration}s")
-        audio_values = model.generate(
-            **inputs,
-            max_new_tokens=max_new_tokens,
-            do_sample=True,
-            guidance_scale=3.0,
-            temperature=1.0
-        )
-        
-        audio_data = audio_values[0].cpu().numpy()
-        audio_data = (audio_data * 32767).astype(np.int16)
-        
-        logging.info("Song generated successfully")
-        return audio_data, sampling_rate
-    except Exception as e:
-        logging.error(f"Error generating song: {str(e)}")
-        st.error(f"Error generating song: {str(e)}")
-        return None, None
+    prompt = f"Create an engaging {style} song with a catchy melody and rhythm"
+    inputs = processor(
+        text=[prompt],
+        padding=True,
+        return_tensors="pt",
+    )
+    
+    sampling_rate = 32000
+    total_samples = duration * sampling_rate
+    max_new_tokens = min(int(total_samples / 512), 512)
+    
+    logging.info(f"Generating song with style: {style}, duration: {duration}s")
+    audio_values = model.generate(
+        **inputs,
+        max_new_tokens=max_new_tokens,
+        do_sample=True,
+        guidance_scale=3.0,
+        temperature=1.0
+    )
+    
+    audio_data = audio_values[0].cpu().numpy()
+    audio_data = (audio_data * 32767).astype(np.int16)
+    
+    logging.info("Song generated successfully")
+    return audio_data, sampling_rate
 
-def create_video(audio_data, sampling_rate, style):
-    plt.figure(figsize=(10, 5))
-    plt.plot(audio_data)
-    plt.title(f"{style.capitalize()} Music Visualization")
-    plt.axis('off')
-    plt.tight_layout()
-    plt.savefig('temp_waveform.png')
-    plt.close()
+def get_audio_download_link(audio_data, sampling_rate, filename):
+    virtualfile = io.BytesIO()
+    sf.write(virtualfile, audio_data, sampling_rate, format='wav')
+    b64 = base64.b64encode(virtualfile.getvalue()).decode()
+    return f'<a href="data:audio/wav;base64,{b64}" download="{filename}">Download {filename}</a>'
 
-    audio_clip = AudioFileClip.AudioArrayClip(audio_data, fps=sampling_rate)
-    image_clip = ImageClip('temp_waveform.png').set_duration(audio_clip.duration)
-    video = CompositeVideoClip([image_clip, audio_clip])
-    video.write_videofile(f"{style}_music_video.mp4", fps=24)
-    return f"{style}_music_video.mp4"
-
-# Main app logic
 def main():
     st.title("Rhythm Maker")
     st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate your own music with AI.</p>', unsafe_allow_html=True)
 
     selected_style = st.selectbox("Choose a music style", ["Jazz", "Rock", "Electronic", "Classical"])
+    duration = st.slider("Select duration (seconds)", 5, 30, 15)
 
-    if st.button("Generate Music Video"):
-        if model is None or processor is None or device is None:
-            st.error("Model failed to load. Please try again later.")
-            return
+    if st.button("Generate Music"):
+        with st.spinner("Generating your music..."):
+            audio_data, sampling_rate = generate_song(selected_style.lower(), duration)
+            
+            # Create a BytesIO object to store the audio data
+            audio_buffer = io.BytesIO()
+            sf.write(audio_buffer, audio_data, sampling_rate, format='wav')
+            audio_buffer.seek(0)
+            
+            # Display audio player
+            st.audio(audio_buffer, format='audio/wav')
+            
+            # Provide download link
+            st.markdown(get_audio_download_link(audio_data, sampling_rate, f"{selected_style.lower()}_music.wav"), unsafe_allow_html=True)
 
-        with st.spinner("Generating your music video..."):
-            try:
-                audio_data, sampling_rate = generate_song(selected_style.lower())
-                if audio_data is not None and sampling_rate is not None:
-                    video_file = create_video(audio_data, sampling_rate, selected_style.lower())
-                    st.video(video_file)
-                    st.download_button("Download Video", video_file, file_name=f"{selected_style}_music_video.mp4")
-                else:
-                    st.error("Failed to generate audio. Please try again.")
-            except Exception as e:
-                logging.error(f"Error during music video generation: {str(e)}")
-                st.error("An error occurred during music video generation. Please try again.")
-
-    st.info("To generate a new video, please refresh the page.")
-
-# Run the main function
 if __name__ == "__main__":
     main()
