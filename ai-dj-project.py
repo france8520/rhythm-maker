@@ -65,11 +65,12 @@ async def generate_song(style, duration, session_id):
     ).to(device)
     
     # Use the model's sampling rate
-    sampling_rate = model.config.sample_rate
+    sampling_rate = 44100
     
     # Calculate max_new_tokens based on duration
     # The exact calculation may depend on the model's specific configuration
-    tokens_per_second = sampling_rate / model.config.hop_length
+    hop_length = model.config.hop_length if hasattr(model.config, 'hop_length') else 512  # or a suitable value
+    tokens_per_second = sampling_rate / hop_length
     max_new_tokens = int(duration * tokens_per_second)
     
     logging.info(f"Generating song with style: {style}, duration: {duration}s for session {session_id}")
@@ -136,7 +137,7 @@ def main():
     global model, processor, device
 
     if model is None:
-        model, processor, device = load_model()
+       model, processor, device = load_model()
 
     st.title("Rhythm Maker")
     st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate your own music with AI.</p>', unsafe_allow_html=True)
