@@ -59,7 +59,7 @@ def generate_song(style, duration=15):
     
     sampling_rate = 32000
     total_samples = duration * sampling_rate
-    max_new_tokens = min(int(total_samples / 256), 1024)
+    max_new_tokens = min(int(total_samples / 320), 768)  # Further adjusted calculation
     
     logging.info(f"Generating song with style: {style}, duration: {duration}s")
     audio_values = model.generate(
