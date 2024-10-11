@@ -92,8 +92,11 @@ def process_queue():
         request_queue.task_done()
 
 def get_audio_download_link(audio_data, sampling_rate, filename):
+    # Ensure audio_data is in the correct format (16-bit PCM)
+    audio_data_int16 = (audio_data * 32767).astype(np.int16)
+    
     virtualfile = io.BytesIO()
-    wavfile.write(virtualfile, sampling_rate, audio_data)
+    wavfile.write(virtualfile, sampling_rate, audio_data_int16)
     virtualfile.seek(0)
     b64 = base64.b64encode(virtualfile.getvalue()).decode()
     href = f'<a href="data:audio/wav;base64,{b64}" download="{filename}">Download {filename}</a>'
@@ -141,8 +144,11 @@ def main():
             st.session_state.audio_generated = True
             audio_data, sampling_rate = results[st.session_state.session_id]
             
+            # Ensure audio_data is in the correct format for playback (float32)
+            audio_data_float32 = audio_data.astype(np.float32) / 32767
+            
             # Display audio player
-            audio_placeholder.audio(audio_data, format='audio/wav', sample_rate=sampling_rate)
+            audio_placeholder.audio(audio_data_float32, format='audio/wav', sample_rate=sampling_rate)
             
             # Display download button
             download_placeholder.markdown(get_audio_download_link(audio_data, sampling_rate, f"{selected_style.lower()}_music.wav"), unsafe_allow_html=True)
