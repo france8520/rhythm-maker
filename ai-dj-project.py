@@ -107,9 +107,11 @@ async def generate_song(style, duration, session_id):
         return_tensors="pt",
     ).to(device)
     
-    sampling_rate = model.config.audio_encoder.sampling_rate
-    total_samples = duration * sampling_rate
-    max_new_tokens = min(int(total_samples / model.config.audio_encoder.hop_length), model.config.max_length)
+    sampling_rate = model.config.audio_frame_rate
+    
+    # Calculate max_new_tokens based on duration
+    # Assuming 1 token represents 1/50th of a second (this may need adjustment)
+    max_new_tokens = min(int(duration * 50), model.config.max_length)
     
     logging.info(f"Generating song with style: {style}, duration: {duration}s for session {session_id}")
     audio_values = await asyncio.to_thread(
@@ -125,6 +127,7 @@ async def generate_song(style, duration, session_id):
     
     logging.info(f"Song generated successfully for session {session_id}")
     return audio_data, sampling_rate
+
 
 def main():
     global model, processor, device
