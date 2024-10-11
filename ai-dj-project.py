@@ -7,16 +7,13 @@ import soundfile as sf
 import logging
 import base64
 from scipy.io import wavfile
-from concurrent.futures import ThreadPoolExecutor
 import uuid
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
 # Streamlit configuration
-st.set_page_config(page_title="Rhythm Maker", layout="wide")
-
-# Custom CSS
+st.set_page_config(page_title="Fast Rhythm Maker", layout="wide")
 st.markdown("""
 <style>
 .stApp {
@@ -57,16 +54,16 @@ def load_model():
     return model, processor, device
 
 def generate_song(model, processor, device, style, duration=15):
-    prompt = f"Create an engaging {style} song with a catchy melody and rhythm"
+    prompt = f"Create a short {style} melody"
     inputs = processor(
         text=[prompt],
         padding=True,
         return_tensors="pt",
     ).to(device)
     
-    sampling_rate = 32000
+    sampling_rate = 16000  # Reduced from 32000
     total_samples = duration * sampling_rate
-    max_new_tokens = min(int(total_samples / 256), 1024)
+    max_new_tokens = min(int(total_samples / 320), 256)  # Further reduced for faster generation
     
     logging.info(f"Generating song with style: {style}, duration: {duration}s")
     with torch.no_grad():
@@ -91,22 +88,32 @@ def get_audio_download_link(audio_data, sampling_rate, filename):
     b64 = base64.b64encode(virtualfile.getvalue()).decode()
     return f'<a href="data:audio/wav;base64,{b64}" download="{filename}">Download {filename}</a>'
 
+@st.cache_data(ttl=3600, max_entries=100)  # Cache the generated audio for 1 hour, limit to 100 entries
+def cached_generate_song(style, duration, user_id):
+    model, processor, device = load_model()
+    return generate_song(model, processor, device, style, duration)
+
 def main():
-    st.title("Rhythm Maker")
+    st.title("Fast Rhythm Maker")
     st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate your own music with AI.</p>', unsafe_allow_html=True)
 
-    model, processor, device = load_model()
-
     selected_style = st.selectbox("Choose a music style", ["Jazz", "Rock", "Electronic", "Classical"])
-    duration = st.slider("Select duration (seconds)", 5, 30, 15)
+    duration = st.slider("Select duration (seconds)", 5, 15, 10)  # Reduced max duration to 15 seconds
 
     if st.button("Generate Music"):
         try:
             with st.spinner("Generating your music..."):
-                # Use ThreadPoolExecutor to run the generation in a separate thread
-                with ThreadPoolExecutor() as executor:
-                    future = executor.submit(generate_song, model, processor, device, selected_style.lower(), duration)
-                    audio_data, sampling_rate = future.result()
+                start_time = torch.cuda.Event(enable_timing=True)
+                end_time = torch.cuda.Event(enable_timing=True)
+                
+                start_time.record()
+                # Use cached function to generate or retrieve cached audio
+                audio_data, sampling_rate = cached_generate_song(selected_style.lower(), duration, st.session_state.user_id)
+                end_time.record()
+                
+                # Synchronize CUDA operations and calculate elapsed time
+                torch.cuda.synchronize()
+                elapsed_time = start_time.elapsed_time(end_time) / 1000  # Convert to seconds
                 
                 # Create a BytesIO object to store the audio data
                 audio_buffer = io.BytesIO()
@@ -118,6 +125,9 @@ def main():
                 
                 # Provide download link
                 st.markdown(get_audio_download_link(audio_data, sampling_rate, f"{selected_style.lower()}_music_{st.session_state.user_id}.wav"), unsafe_allow_html=True)
+                
+                # Display generation time
+                st.success(f"Music generated in {elapsed_time:.2f} seconds")
         except Exception as e:
             st.error(f"An error occurred while generating the music: {str(e)}")
             logging.error(f"Error generating music: {str(e)}")
