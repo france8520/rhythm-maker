@@ -13,7 +13,7 @@ import uuid
 logging.basicConfig(level=logging.INFO)
 
 # Streamlit configuration
-st.set_page_config(page_title="Balanced Rhythm Maker", layout="wide")
+st.set_page_config(page_title="Fast Rhythm Maker", layout="wide")
 st.markdown("""
 <style>
 .stApp {
@@ -45,25 +45,24 @@ if 'user_id' not in st.session_state:
 
 @st.cache_resource
 def load_model():
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = "cpu"  # Force CPU for consistent performance across all devices
     logging.info(f"Using device: {device}")
-    model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small")
-    processor = AutoProcessor.from_pretrained("facebook/musicgen-small")
+    model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-melody")
+    processor = AutoProcessor.from_pretrained("facebook/musicgen-melody")
     model.to(device)
     logging.info("Model and processor loaded successfully")
     return model, processor, device
 
 def generate_song(model, processor, device, style, duration=15):
-    prompt = f"Create an engaging {style} song with a catchy melody and rhythm"
+    prompt = f"Short {style} melody"
     inputs = processor(
         text=[prompt],
         padding=True,
         return_tensors="pt",
     ).to(device)
     
-    sampling_rate = 32000  # Restored to original sampling rate
-    total_samples = duration * sampling_rate
-    max_new_tokens = min(int(total_samples / 256), 512)  # Adjusted for better quality
+    sampling_rate = 32000
+    max_new_tokens = min(int(duration * sampling_rate / 256), 512)  # Adjust tokens based on duration
     
     logging.info(f"Generating song with style: {style}, duration: {duration}s")
     with torch.no_grad():
@@ -72,11 +71,18 @@ def generate_song(model, processor, device, style, duration=15):
             max_new_tokens=max_new_tokens,
             do_sample=True,
             guidance_scale=3.0,
-            temperature=0.8
+            temperature=1.0
         )
     
     audio_data = audio_values[0].cpu().numpy()
     audio_data = (audio_data * 32767).astype(np.int16)
+    
+    # Trim or pad audio to exact duration
+    target_samples = duration * sampling_rate
+    if audio_data.shape[0] > target_samples:
+        audio_data = audio_data[:target_samples]
+    elif audio_data.shape[0] < target_samples:
+        audio_data = np.pad(audio_data, (0, target_samples - audio_data.shape[0]), mode='constant')
     
     logging.info("Song generated successfully")
     return audio_data, sampling_rate
@@ -88,21 +94,21 @@ def get_audio_download_link(audio_data, sampling_rate, filename):
     b64 = base64.b64encode(virtualfile.getvalue()).decode()
     return f'<a href="data:audio/wav;base64,{b64}" download="{filename}">Download {filename}</a>'
 
-@st.cache_data(ttl=3600, max_entries=30)  # Cache the generated audio for 1 hour, limit to 30 entries
+@st.cache_data(ttl=1800, max_entries=20)  # Cache for 30 minutes, limit to 20 entries
 def cached_generate_song(style, duration, user_id):
     model, processor, device = load_model()
     return generate_song(model, processor, device, style, duration)
 
 def main():
-    st.title("Balanced Rhythm Maker")
-    st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate your own music with AI.</p>', unsafe_allow_html=True)
+    st.title("Fast Rhythm Maker")
+    st.markdown('<p class="centered-text">Generate quick musical snippets with AI.</p>', unsafe_allow_html=True)
 
     selected_style = st.selectbox("Choose a music style", ["Jazz", "Rock", "Electronic", "Classical"])
-    duration = st.slider("Select duration (seconds)", 5, 10, 15)  # Increased max duration to 20 seconds
+    duration = st.slider("Select duration (seconds)", 5, 15, 10)  # Adjusted max duration to 15 seconds
 
     if st.button("Generate Music"):
         try:
-            with st.spinner("Generating your music... This may take a few minutes."):
+            with st.spinner("Generating your music snippet..."):
                 start_time = time.time()
                 
                 # Use cached function to generate or retrieve cached audio
@@ -120,7 +126,7 @@ def main():
                 st.audio(audio_buffer, format='audio/wav')
                 
                 # Provide download link
-                st.markdown(get_audio_download_link(audio_data, sampling_rate, f"{selected_style.lower()}_music_{st.session_state.user_id}.wav"), unsafe_allow_html=True)
+                st.markdown(get_audio_download_link(audio_data, sampling_rate, f"{selected_style.lower()}_snippet_{st.session_state.user_id}.wav"), unsafe_allow_html=True)
                 
                 # Display generation time
                 st.success(f"Music generated in {elapsed_time:.2f} seconds")
