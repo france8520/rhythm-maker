@@ -10,7 +10,7 @@ import asyncio
 import uuid
 from queue import Queue
 import threading
-
+import time
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
@@ -96,7 +96,8 @@ def get_audio_download_link(audio_data, sampling_rate, filename):
     wavfile.write(virtualfile, sampling_rate, audio_data)
     virtualfile.seek(0)
     b64 = base64.b64encode(virtualfile.getvalue()).decode()
-    return f'<a href="data:audio/wav;base64,{b64}" download="{filename}">Download {filename}</a>'
+    href = f'<a href="data:audio/wav;base64,{b64}" download="{filename}">Download {filename}</a>'
+    return href
 
 def main():
     global model, processor, device
@@ -112,25 +113,29 @@ def main():
         st.session_state.session_id = str(uuid.uuid4())
     if 'request_submitted' not in st.session_state:
         st.session_state.request_submitted = False
+    if 'audio_generated' not in st.session_state:
+        st.session_state.audio_generated = False
 
     selected_style = st.selectbox("Choose a music style", ["Jazz", "Rock", "Electronic", "Classical"])
     duration = st.slider("Select duration (seconds)", 5, 30, 15)
 
     if st.button("Generate Music"):
         if not st.session_state.request_submitted:
-            request_queue.put((st.session_state.session_id, selected_style.lower(), duration))
             st.session_state.request_submitted = True
+            st.session_state.audio_generated = False
+            request_queue.put((st.session_state.session_id, selected_style.lower(), duration))
             st.info("Your request has been submitted. Please wait...")
 
     if st.session_state.request_submitted:
+        # Check if the result is ready
         if st.session_state.session_id in results:
+            st.session_state.audio_generated = True
             audio_data, sampling_rate = results[st.session_state.session_id]
             
-            audio_buffer = io.BytesIO()
-            wavfile.write(audio_buffer, sampling_rate, audio_data)
-            audio_buffer.seek(0)
+            # Display audio player
+            st.audio(audio_data, format='audio/wav', sample_rate=sampling_rate)
             
-            st.audio(audio_buffer, format='audio/wav')
+            # Display download button
             st.markdown(get_audio_download_link(audio_data, sampling_rate, f"{selected_style.lower()}_music.wav"), unsafe_allow_html=True)
             
             # Clear the result and reset the session
@@ -139,6 +144,8 @@ def main():
             st.session_state.session_id = str(uuid.uuid4())
         else:
             st.info("Your music is being generated. Please wait...")
+            time.sleep(1)  # Add a small delay to prevent excessive reloads
+            st.experimental_rerun()
 
 if __name__ == "__main__":
     # Start the queue processing thread
