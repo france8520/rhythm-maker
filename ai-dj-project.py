@@ -98,7 +98,7 @@ def main():
     st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate your own music with AI.</p>', unsafe_allow_html=True)
 
     selected_style = st.selectbox("Choose a music style", ["Jazz", "Rock", "Electronic", "Classical"])
-    duration = st.slider("Select duration (seconds)", 5, 20, 15)  # Increased max duration to 20 seconds
+    duration = st.slider("Select duration (seconds)", 5, 10, 15)  # Increased max duration to 20 seconds
 
     if st.button("Generate Music"):
         try:
