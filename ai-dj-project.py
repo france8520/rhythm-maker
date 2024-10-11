@@ -63,15 +63,12 @@ async def generate_song(style, duration, session_id):
         padding=True,
         return_tensors="pt",
     ).to(device)
-    
-    # Use the model's sampling rate
-    sampling_rate = 44100
-    
+
+    # Set a default sampling rate if not present in the config
+    sampling_rate = getattr(model.config, 'audio_frame_rate', 44100)
+
     # Calculate max_new_tokens based on duration
-    # The exact calculation may depend on the model's specific configuration
-    hop_length = model.config.hop_length if hasattr(model.config, 'hop_length') else 512  # or a suitable value
-    tokens_per_second = sampling_rate / hop_length
-    max_new_tokens = int(duration * tokens_per_second)
+    max_new_tokens = min(int(duration * 50), model.config.max_length)
     
     logging.info(f"Generating song with style: {style}, duration: {duration}s for session {session_id}")
     audio_values = await asyncio.to_thread(
