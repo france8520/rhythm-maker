@@ -119,33 +119,39 @@ def main():
     selected_style = st.selectbox("Choose a music style", ["Jazz", "Rock", "Electronic", "Classical"])
     duration = st.slider("Select duration (seconds)", 5, 30, 15)
 
-    if st.button("Generate Music"):
+    generate_button = st.empty()
+    status_placeholder = st.empty()
+    audio_placeholder = st.empty()
+    download_placeholder = st.empty()
+
+    if generate_button.button("Generate Music"):
         if not st.session_state.request_submitted:
             st.session_state.request_submitted = True
             st.session_state.audio_generated = False
             request_queue.put((st.session_state.session_id, selected_style.lower(), duration))
-            st.info("Your request has been submitted. Please wait...")
+            status_placeholder.info("Your request has been submitted. Please wait...")
 
     if st.session_state.request_submitted:
-        # Check if the result is ready
+        with status_placeholder:
+            with st.spinner("Generating your music..."):
+                while st.session_state.session_id not in results:
+                    time.sleep(0.5)
+
         if st.session_state.session_id in results:
             st.session_state.audio_generated = True
             audio_data, sampling_rate = results[st.session_state.session_id]
             
             # Display audio player
-            st.audio(audio_data, format='audio/wav', sample_rate=sampling_rate)
+            audio_placeholder.audio(audio_data, format='audio/wav', sample_rate=sampling_rate)
             
             # Display download button
-            st.markdown(get_audio_download_link(audio_data, sampling_rate, f"{selected_style.lower()}_music.wav"), unsafe_allow_html=True)
+            download_placeholder.markdown(get_audio_download_link(audio_data, sampling_rate, f"{selected_style.lower()}_music.wav"), unsafe_allow_html=True)
             
             # Clear the result and reset the session
             del results[st.session_state.session_id]
             st.session_state.request_submitted = False
             st.session_state.session_id = str(uuid.uuid4())
-        else:
-            st.info("Your music is being generated. Please wait...")
-            time.sleep(1)  # Add a small delay to prevent excessive reloads
-            st.experimental_rerun()
+            status_placeholder.success("Your music has been generated!")
 
 if __name__ == "__main__":
     # Start the queue processing thread
