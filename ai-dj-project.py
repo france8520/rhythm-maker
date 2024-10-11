@@ -3,7 +3,7 @@ import torch
 from transformers import AutoProcessor, MusicgenForConditionalGeneration
 import numpy as np
 import io
-from scipy.io import wavfile
+import soundfile as sf
 import logging
 import base64
 import asyncio
@@ -92,15 +92,39 @@ def process_queue():
         request_queue.task_done()
 
 def get_audio_download_link(audio_data, sampling_rate, filename):
-    # Ensure audio_data is in the correct format (16-bit PCM)
-    audio_data_int16 = (audio_data * 32767).astype(np.int16)
-    
     virtualfile = io.BytesIO()
-    wavfile.write(virtualfile, sampling_rate, audio_data_int16)
+    sf.write(virtualfile, audio_data, sampling_rate, format='WAV')
     virtualfile.seek(0)
     b64 = base64.b64encode(virtualfile.getvalue()).decode()
     href = f'<a href="data:audio/wav;base64,{b64}" download="{filename}">Download {filename}</a>'
     return href
+
+async def generate_song(style, duration, session_id):
+    prompt = f"Create an engaging {style} song with a catchy melody and rhythm"
+    inputs = processor(
+        text=[prompt],
+        padding=True,
+        return_tensors="pt",
+    ).to(device)
+    
+    sampling_rate = model.config.audio_encoder.sampling_rate
+    total_samples = duration * sampling_rate
+    max_new_tokens = min(int(total_samples / model.config.audio_encoder.hop_length), model.config.max_length)
+    
+    logging.info(f"Generating song with style: {style}, duration: {duration}s for session {session_id}")
+    audio_values = await asyncio.to_thread(
+        model.generate,
+        **inputs,
+        max_new_tokens=max_new_tokens,
+        do_sample=True,
+        guidance_scale=3.0,
+        temperature=1.0
+    )
+    
+    audio_data = audio_values[0].cpu().numpy()
+    
+    logging.info(f"Song generated successfully for session {session_id}")
+    return audio_data, sampling_rate
 
 def main():
     global model, processor, device
@@ -144,11 +168,8 @@ def main():
             st.session_state.audio_generated = True
             audio_data, sampling_rate = results[st.session_state.session_id]
             
-            # Ensure audio_data is in the correct format for playback (float32)
-            audio_data_float32 = audio_data.astype(np.float32) / 32767
-            
             # Display audio player
-            audio_placeholder.audio(audio_data_float32, format='audio/wav', sample_rate=sampling_rate)
+            audio_placeholder.audio(audio_data, format='audio/wav', sample_rate=sampling_rate)
             
             # Display download button
             download_placeholder.markdown(get_audio_download_link(audio_data, sampling_rate, f"{selected_style.lower()}_music.wav"), unsafe_allow_html=True)
