@@ -11,6 +11,7 @@ import time
 import uuid
 import os
 
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
@@ -72,10 +73,10 @@ def generate_song(model, processor, device, style, duration=20):
             return_tensors="pt",
         ).to(device)
         
-        sampling_rate = 24000  # Adjusted sampling rate
-        total_samples = duration * sampling_rate
-        max_new_tokens = min(int(total_samples / 320), 256)
-        
+        sampling_rate = model.config.audio_encoder.sampling_rate
+        audio_length = duration * sampling_rate
+        max_new_tokens = model.config.max_length // 2  # Use max allowed tokens
+
         logging.info(f"Generating song with style: {style}, duration: {duration}s")
         with torch.no_grad():
             audio_values = model.generate(
@@ -86,7 +87,13 @@ def generate_song(model, processor, device, style, duration=20):
                 temperature=1.0
             )
         
-        audio_data = audio_values[0].cpu().numpy()
+        audio_data = audio_values[0, 0].cpu().numpy()
+        
+        # Adjust length to match requested duration
+        if len(audio_data) < audio_length:
+            audio_data = np.pad(audio_data, (0, audio_length - len(audio_data)))
+        elif len(audio_data) > audio_length:
+            audio_data = audio_data[:audio_length]
         
         # Basic post-processing
         audio_data = signal.sosfilt(signal.butter(10, 100, 'hp', fs=sampling_rate, output='sos'), audio_data)
