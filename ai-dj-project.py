@@ -63,7 +63,6 @@ def load_model():
         logging.error(f"Error loading model: {str(e)}")
         st.error("Failed to load the AI model. Please try again later.")
         return None, None, None
-
 def generate_song(model, processor, device, style, duration=20):
     try:
         prompt = f"Create a {style} melody"
@@ -80,38 +79,35 @@ def generate_song(model, processor, device, style, duration=20):
         with torch.no_grad():
             audio_values = model.generate(
                 **inputs,
-                max_new_tokens=500,  # Adjust this value if needed
+                max_new_tokens=500,
                 do_sample=True,
                 guidance_scale=3.0,
                 temperature=1.0
             )
         
-        # Check the shape of audio_values
         logging.info(f"Shape of generated audio: {audio_values.shape}")
         
-        # Extract the audio data correctly
         audio_data = audio_values[0].cpu().float().numpy()
         
-        # Ensure we have the correct number of channels
         if audio_data.ndim == 1:
             audio_data = audio_data.reshape(1, -1)
         elif audio_data.ndim > 2:
             audio_data = audio_data.mean(axis=0, keepdims=True)
         
-        # Adjust length to match requested duration
         if audio_data.shape[1] < audio_length:
             padding = np.zeros((audio_data.shape[0], audio_length - audio_data.shape[1]))
             audio_data = np.concatenate([audio_data, padding], axis=1)
         elif audio_data.shape[1] > audio_length:
             audio_data = audio_data[:, :audio_length]
         
-        # Basic post-processing
         for i in range(audio_data.shape[0]):
             audio_data[i] = signal.sosfilt(signal.butter(10, 100, 'hp', fs=sampling_rate, output='sos'), audio_data[i])
             audio_data[i] = signal.sosfilt(signal.butter(10, 10000, 'lp', fs=sampling_rate, output='sos'), audio_data[i])
         
-        # Normalize audio
+        # Normalize audio to [-1, 1] range
         audio_data = audio_data / np.max(np.abs(audio_data))
+        
+        # Convert to int16 range [-32768, 32767]
         audio_data = (audio_data * 32767).astype(np.int16)
         
         logging.info(f"Final audio shape: {audio_data.shape}")
@@ -122,6 +118,7 @@ def generate_song(model, processor, device, style, duration=20):
     except Exception as e:
         logging.error(f"Error generating song: {str(e)}")
         return None, None
+
 
 def get_audio_download_link(audio_data, sampling_rate, filename):
     try:
@@ -162,18 +159,17 @@ def main():
                 end_time = time.time()
                 elapsed_time = end_time - start_time
                 
-                # Log audio data information
                 logging.info(f"Audio data shape: {audio_data.shape}")
                 logging.info(f"Audio data type: {audio_data.dtype}")
                 logging.info(f"Sampling rate: {sampling_rate}")
                 
                 audio_buffer = io.BytesIO()
-                wavfile.write(audio_buffer, sampling_rate, audio_data)
+                wavfile.write(audio_buffer, sampling_rate, audio_data.T)  # Transpose audio_data
                 audio_buffer.seek(0)
                 
                 st.audio(audio_buffer, format='audio/wav')
                 
-                download_link = get_audio_download_link(audio_data, sampling_rate, f"{selected_style.lower()}_music_{st.session_state.user_id}.wav")
+                download_link = get_audio_download_link(audio_data.T, sampling_rate, f"{selected_style.lower()}_music_{st.session_state.user_id}.wav")
                 if download_link:
                     st.markdown(download_link, unsafe_allow_html=True)
                 
@@ -181,7 +177,6 @@ def main():
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
             logging.error(f"Error in main function: {str(e)}")
-
 
 if __name__ == "__main__":
     main()
