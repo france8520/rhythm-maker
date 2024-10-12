@@ -118,6 +118,11 @@ def generate_song(model, processor, device, style, duration=20):
     except Exception as e:
         logging.error(f"Error generating song: {str(e)}")
         return None, None
+def generate_song_wrapper(style, duration, user_id):
+    model, processor, device = load_model()
+    if model is None:
+        return None, None
+    return generate_song(model, processor, device, style, duration)
 
 @st.cache_data(ttl=3600, max_entries=50)
 def cached_generate_song(style, duration, user_id):
@@ -127,18 +132,22 @@ def cached_generate_song(style, duration, user_id):
     return generate_song(model, processor, device, style, duration)
 
 def main():
-    st.title("Rhythm Maker")
+    st.title("Universal Rhythm Maker")
     st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate your own music with AI.</p>', unsafe_allow_html=True)
 
     selected_style = st.selectbox("Choose a music style", ["Jazz", "Rock", "Electronic", "Classical", "Pop"])
-    duration = st.slider("Select duration (seconds)", 5, 20, 10)
+    
+    # Replace slider with a select box for duration
+    duration_options = [5, 10, 15, 20, 30]
+    duration = st.selectbox("Select duration (seconds)", duration_options)
 
     if st.button("Generate Music"):
         try:
             with st.spinner("Generating your music... This may take a few minutes."):
                 start_time = time.time()
                 
-                audio_data, sampling_rate = cached_generate_song(selected_style.lower(), duration, st.session_state.user_id)
+                # Use generate_song_wrapper instead of cached_generate_song
+                audio_data, sampling_rate = generate_song_wrapper(selected_style.lower(), duration, st.session_state.user_id)
                 
                 if audio_data is None:
                     st.error("Failed to generate music. Please try again.")
@@ -152,7 +161,7 @@ def main():
                 logging.info(f"Sampling rate: {sampling_rate}")
                 
                 audio_buffer = io.BytesIO()
-                wavfile.write(audio_buffer, sampling_rate, audio_data.T)  # Transpose audio_data
+                wavfile.write(audio_buffer, sampling_rate, audio_data.T)
                 audio_buffer.seek(0)
                 
                 st.audio(audio_buffer, format='audio/wav')
