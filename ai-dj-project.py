@@ -119,18 +119,6 @@ def generate_song(model, processor, device, style, duration=20):
         logging.error(f"Error generating song: {str(e)}")
         return None, None
 
-
-def get_audio_download_link(audio_data, sampling_rate, filename):
-    try:
-        virtualfile = io.BytesIO()
-        wavfile.write(virtualfile, sampling_rate, audio_data.T)
-        virtualfile.seek(0)
-        b64 = base64.b64encode(virtualfile.getvalue()).decode()
-        return f'<a href="data:audio/wav;base64,{b64}" download="{filename}">Download {filename}</a>'
-    except Exception as e:
-        logging.error(f"Error creating download link: {str(e)}")
-        return None
-
 @st.cache_data(ttl=3600, max_entries=50)
 def cached_generate_song(style, duration, user_id):
     model, processor, device = load_model()
@@ -139,7 +127,7 @@ def cached_generate_song(style, duration, user_id):
     return generate_song(model, processor, device, style, duration)
 
 def main():
-    st.title("Universal Rhythm Maker")
+    st.title("Rhythm Maker")
     st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate your own music with AI.</p>', unsafe_allow_html=True)
 
     selected_style = st.selectbox("Choose a music style", ["Jazz", "Rock", "Electronic", "Classical", "Pop"])
@@ -168,10 +156,6 @@ def main():
                 audio_buffer.seek(0)
                 
                 st.audio(audio_buffer, format='audio/wav')
-                
-                download_link = get_audio_download_link(audio_data.T, sampling_rate, f"{selected_style.lower()}_music_{st.session_state.user_id}.wav")
-                if download_link:
-                    st.markdown(download_link, unsafe_allow_html=True)
                 
                 st.success(f"Music generated in {elapsed_time:.2f} seconds")
         except Exception as e:
