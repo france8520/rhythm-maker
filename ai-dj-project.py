@@ -74,36 +74,50 @@ def generate_song(model, processor, device, style, duration=20):
         ).to(device)
         
         sampling_rate = model.config.audio_encoder.sampling_rate
-        audio_length = duration * sampling_rate
-        max_new_tokens = model.config.max_length // 2  # Use max allowed tokens
-
+        audio_length = int(duration * sampling_rate)
+        
         logging.info(f"Generating song with style: {style}, duration: {duration}s")
         with torch.no_grad():
             audio_values = model.generate(
                 **inputs,
-                max_new_tokens=max_new_tokens,
+                max_new_tokens=500,  # Adjust this value if needed
                 do_sample=True,
                 guidance_scale=3.0,
                 temperature=1.0
             )
         
-        audio_data = audio_values[0, 0].cpu().numpy()
+        # Check the shape of audio_values
+        logging.info(f"Shape of generated audio: {audio_values.shape}")
+        
+        # Extract the audio data correctly
+        audio_data = audio_values[0].cpu().float().numpy()
+        
+        # Ensure we have the correct number of channels
+        if audio_data.ndim == 1:
+            audio_data = audio_data.reshape(1, -1)
+        elif audio_data.ndim > 2:
+            audio_data = audio_data.mean(axis=0, keepdims=True)
         
         # Adjust length to match requested duration
-        if len(audio_data) < audio_length:
-            audio_data = np.pad(audio_data, (0, audio_length - len(audio_data)))
-        elif len(audio_data) > audio_length:
-            audio_data = audio_data[:audio_length]
+        if audio_data.shape[1] < audio_length:
+            padding = np.zeros((audio_data.shape[0], audio_length - audio_data.shape[1]))
+            audio_data = np.concatenate([audio_data, padding], axis=1)
+        elif audio_data.shape[1] > audio_length:
+            audio_data = audio_data[:, :audio_length]
         
         # Basic post-processing
-        audio_data = signal.sosfilt(signal.butter(10, 100, 'hp', fs=sampling_rate, output='sos'), audio_data)
-        audio_data = signal.sosfilt(signal.butter(10, 10000, 'lp', fs=sampling_rate, output='sos'), audio_data)
+        for i in range(audio_data.shape[0]):
+            audio_data[i] = signal.sosfilt(signal.butter(10, 100, 'hp', fs=sampling_rate, output='sos'), audio_data[i])
+            audio_data[i] = signal.sosfilt(signal.butter(10, 10000, 'lp', fs=sampling_rate, output='sos'), audio_data[i])
         
         # Normalize audio
         audio_data = audio_data / np.max(np.abs(audio_data))
         audio_data = (audio_data * 32767).astype(np.int16)
         
+        logging.info(f"Final audio shape: {audio_data.shape}")
+        logging.info(f"Audio data range: {audio_data.min()} to {audio_data.max()}")
         logging.info("Song generated successfully")
+        
         return audio_data, sampling_rate
     except Exception as e:
         logging.error(f"Error generating song: {str(e)}")
@@ -148,8 +162,13 @@ def main():
                 end_time = time.time()
                 elapsed_time = end_time - start_time
                 
+                # Log audio data information
+                logging.info(f"Audio data shape: {audio_data.shape}")
+                logging.info(f"Audio data type: {audio_data.dtype}")
+                logging.info(f"Sampling rate: {sampling_rate}")
+                
                 audio_buffer = io.BytesIO()
-                wavfile.write(audio_buffer, sampling_rate, audio_data.T)
+                wavfile.write(audio_buffer, sampling_rate, audio_data)
                 audio_buffer.seek(0)
                 
                 st.audio(audio_buffer, format='audio/wav')
@@ -162,6 +181,7 @@ def main():
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
             logging.error(f"Error in main function: {str(e)}")
+
 
 if __name__ == "__main__":
     main()
