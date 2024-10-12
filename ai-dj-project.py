@@ -132,7 +132,7 @@ def cached_generate_song(style, duration, user_id):
     return generate_song(model, processor, device, style, duration)
 
 def main():
-    st.title("Universal Rhythm Maker")
+    st.title("Rhythm Maker")
     st.markdown('<p class="centered-text">Welcome to the AI DJ Project! Generate your own music with AI.</p>', unsafe_allow_html=True)
 
     selected_style = st.selectbox("Choose a music style", ["Jazz", "Rock", "Electronic", "Classical", "Pop"])
