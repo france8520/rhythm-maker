@@ -79,7 +79,7 @@ def generate_song(model, processor, device, style, duration=20):
         with torch.no_grad():
             audio_values = model.generate(
                 **inputs,
-                max_new_tokens=500,
+                max_new_tokens=int(duration * 50),  # Adjust max_new_tokens based on duration
                 do_sample=True,
                 guidance_scale=3.0,
                 temperature=1.0
@@ -94,12 +94,19 @@ def generate_song(model, processor, device, style, duration=20):
         elif audio_data.ndim > 2:
             audio_data = audio_data.mean(axis=0, keepdims=True)
         
+        # Repeat the audio if it's shorter than the requested duration
         if audio_data.shape[1] < audio_length:
+            repeats = int(np.ceil(audio_length / audio_data.shape[1]))
+            audio_data = np.tile(audio_data, (1, repeats))
+        
+        # Trim or pad the audio to match the exact requested duration
+        if audio_data.shape[1] > audio_length:
+            audio_data = audio_data[:, :audio_length]
+        elif audio_data.shape[1] < audio_length:
             padding = np.zeros((audio_data.shape[0], audio_length - audio_data.shape[1]))
             audio_data = np.concatenate([audio_data, padding], axis=1)
-        elif audio_data.shape[1] > audio_length:
-            audio_data = audio_data[:, :audio_length]
         
+        # Apply filters
         for i in range(audio_data.shape[0]):
             audio_data[i] = signal.sosfilt(signal.butter(10, 100, 'hp', fs=sampling_rate, output='sos'), audio_data[i])
             audio_data[i] = signal.sosfilt(signal.butter(10, 10000, 'lp', fs=sampling_rate, output='sos'), audio_data[i])
