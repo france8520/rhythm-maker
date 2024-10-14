@@ -54,8 +54,8 @@ def load_model():
     try:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         logging.info(f"Using device: {device}")
-        model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small")  # Reverted to small model for faster loading
-        processor = AutoProcessor.from_pretrained("facebook/musicgen-small")
+        model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-melody")
+        processor = AutoProcessor.from_pretrained("facebook/musicgen-melody")
         model.to(device)
         logging.info("Model and processor loaded successfully")
         return model, processor, device
@@ -63,9 +63,10 @@ def load_model():
         logging.error(f"Error loading model: {str(e)}")
         st.error("Failed to load the AI model. Please try again later.")
         return None, None, None
-def generate_song(model, processor, device, style, duration=20):
+
+def generate_song(model, processor, device, style, duration=15):
     try:
-        prompt = f"Create a {style} melody"
+        prompt = f"Create a short {style} melody"
         inputs = processor(
             text=[prompt],
             padding=True,
@@ -79,37 +80,20 @@ def generate_song(model, processor, device, style, duration=20):
         with torch.no_grad():
             audio_values = model.generate(
                 **inputs,
-                max_new_tokens=int(duration * 50),  # Adjust max_new_tokens based on duration
+                max_new_tokens=int(duration * 25),  # Reduced for faster generation
                 do_sample=True,
-                guidance_scale=3.0,
-                temperature=1.0
+                guidance_scale=2.0,  # Reduced for faster generation
+                temperature=0.8  # Adjusted for faster generation
             )
-        
-        logging.info(f"Shape of generated audio: {audio_values.shape}")
         
         audio_data = audio_values[0].cpu().float().numpy()
         
-        if audio_data.ndim == 1:
-            audio_data = audio_data.reshape(1, -1)
-        elif audio_data.ndim > 2:
-            audio_data = audio_data.mean(axis=0, keepdims=True)
-        
-        # Repeat the audio if it's shorter than the requested duration
-        if audio_data.shape[1] < audio_length:
-            repeats = int(np.ceil(audio_length / audio_data.shape[1]))
-            audio_data = np.tile(audio_data, (1, repeats))
-        
         # Trim or pad the audio to match the exact requested duration
-        if audio_data.shape[1] > audio_length:
-            audio_data = audio_data[:, :audio_length]
-        elif audio_data.shape[1] < audio_length:
-            padding = np.zeros((audio_data.shape[0], audio_length - audio_data.shape[1]))
-            audio_data = np.concatenate([audio_data, padding], axis=1)
-        
-        # Apply filters
-        for i in range(audio_data.shape[0]):
-            audio_data[i] = signal.sosfilt(signal.butter(10, 100, 'hp', fs=sampling_rate, output='sos'), audio_data[i])
-            audio_data[i] = signal.sosfilt(signal.butter(10, 10000, 'lp', fs=sampling_rate, output='sos'), audio_data[i])
+        if audio_data.shape[0] > audio_length:
+            audio_data = audio_data[:audio_length]
+        elif audio_data.shape[0] < audio_length:
+            padding = np.zeros(audio_length - audio_data.shape[0])
+            audio_data = np.concatenate([audio_data, padding])
         
         # Normalize audio to [-1, 1] range
         audio_data = audio_data / np.max(np.abs(audio_data))
@@ -118,7 +102,6 @@ def generate_song(model, processor, device, style, duration=20):
         audio_data = (audio_data * 32767).astype(np.int16)
         
         logging.info(f"Final audio shape: {audio_data.shape}")
-        logging.info(f"Audio data range: {audio_data.min()} to {audio_data.max()}")
         logging.info("Song generated successfully")
         
         return audio_data, sampling_rate
@@ -155,6 +138,12 @@ def main():
                 
                 # Use generate_song_wrapper instead of cached_generate_song
                 audio_data, sampling_rate = generate_song_wrapper(selected_style.lower(), duration, st.session_state.user_id)
+                progress_bar = st.progress(0)
+                for i in range(100):
+                    time.sleep(0.03)  # Simulate progress
+                    progress_bar.progress(i + 1)
+                
+                audio_data, sampling_rate = generate_song_wrapper(selected_style.lower(), duration, st.session_state.user_id)
                 
                 if audio_data is None:
                     st.error("Failed to generate music. Please try again.")
@@ -168,7 +157,7 @@ def main():
                 logging.info(f"Sampling rate: {sampling_rate}")
                 
                 audio_buffer = io.BytesIO()
-                wavfile.write(audio_buffer, sampling_rate, audio_data.T)
+                wavfile.write(audio_buffer, sampling_rate, audio_data)
                 audio_buffer.seek(0)
                 
                 st.audio(audio_buffer, format='audio/wav')
