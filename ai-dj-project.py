@@ -49,14 +49,20 @@ h1 {
 if 'user_id' not in st.session_state:
     st.session_state.user_id = str(uuid.uuid4())
 
+
 @st.cache_resource
 def load_model():
     try:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         logging.info(f"Using device: {device}")
-        model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small")  # Reverted to small model for faster loading
+        model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small", device_map="auto", load_in_8bit=True)
         processor = AutoProcessor.from_pretrained("facebook/musicgen-small")
         model.to(device)
+        
+        # Add these lines here
+        model.eval()  # Set the model to evaluation mode
+        torch.set_grad_enabled(False)  # Disable gradient calculation
+        
         logging.info("Model and processor loaded successfully")
         return model, processor, device
     except Exception as e:
@@ -79,7 +85,7 @@ def generate_song(model, processor, device, style, duration=20):
         with torch.no_grad():
             audio_values = model.generate(
                 **inputs,
-                max_new_tokens=500,
+                max_new_tokens=250,
                 do_sample=True,
                 guidance_scale=3.0,
                 temperature=1.0
@@ -99,11 +105,6 @@ def generate_song(model, processor, device, style, duration=20):
             audio_data = np.concatenate([audio_data, padding], axis=1)
         elif audio_data.shape[1] > audio_length:
             audio_data = audio_data[:, :audio_length]
-        
-        for i in range(audio_data.shape[0]):
-            audio_data[i] = signal.sosfilt(signal.butter(10, 100, 'hp', fs=sampling_rate, output='sos'), audio_data[i])
-            audio_data[i] = signal.sosfilt(signal.butter(10, 10000, 'lp', fs=sampling_rate, output='sos'), audio_data[i])
-        
         # Normalize audio to [-1, 1] range
         audio_data = audio_data / np.max(np.abs(audio_data))
         
