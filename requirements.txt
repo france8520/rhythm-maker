@@ -6,3 +6,4 @@ matplotlib
 moviepy
 soundfile
 scipy
+accelerate>=0.26.0
