@@ -10,7 +10,6 @@ import base64
 import time
 import uuid
 import os
-from accelerate import init_empty_weights
 
 
 # Set up logging
@@ -50,17 +49,17 @@ h1 {
 if 'user_id' not in st.session_state:
     st.session_state.user_id = str(uuid.uuid4())
 
-
 @st.cache_resource
 def load_model():
     try:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cpu")
         logging.info(f"Using device: {device}")
-        model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small", device_map="auto", load_in_8bit=True)
-        processor = AutoProcessor.from_pretrained("facebook/musicgen-small")
-        model.to(device)
         
-        # Add these lines here
+        # Load model without 8-bit quantization or device mapping
+        model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small")
+        processor = AutoProcessor.from_pretrained("facebook/musicgen-small")
+        
+        model.to(device)
         model.eval()  # Set the model to evaluation mode
         torch.set_grad_enabled(False)  # Disable gradient calculation
         
