@@ -10,6 +10,7 @@ import base64
 import time
 import uuid
 import os
+from accelerate import init_empty_weights
 
 
 # Set up logging
