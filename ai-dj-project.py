@@ -85,7 +85,7 @@ def generate_song(model, processor, device, style, duration=20):
         with torch.no_grad():
             audio_values = model.generate(
                 **inputs,
-                max_new_tokens=250,
+                max_new_tokens=500,
                 do_sample=True,
                 guidance_scale=3.0,
                 temperature=1.0
