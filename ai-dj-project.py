@@ -56,7 +56,10 @@ def load_model():
         logging.info(f"Using device: {device}")
         
         # Load model without 8-bit quantization or device mapping
-        model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small")
+        model = MusicgenForConditionalGeneration.from_pretrained(
+                "facebook/musicgen-small",
+                attn_implementation="eager"
+            )
         processor = AutoProcessor.from_pretrained("facebook/musicgen-small")
         
         model.to(device)
@@ -89,7 +92,6 @@ def generate_song(model, processor, device, style, duration=20):
                 do_sample=True,
                 guidance_scale=3.0,
                 temperature=1.0,
-                max_length=1024
             )
         
         logging.info(f"Shape of generated audio: {audio_values.shape}")
