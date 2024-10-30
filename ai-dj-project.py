@@ -139,7 +139,7 @@ def main():
     selected_style = st.selectbox("Choose a music style", ["Jazz", "Rock", "Electronic", "Classical", "Pop"])
     
     # Replace slider with a select box for duration
-    duration_options = [5, 10]
+    duration_options = [10]
     duration = st.selectbox("Select duration (seconds)", duration_options)
 
     if st.button("Generate Music"):
