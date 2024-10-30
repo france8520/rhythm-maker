@@ -88,7 +88,8 @@ def generate_song(model, processor, device, style, duration=20):
                 max_new_tokens=500,
                 do_sample=True,
                 guidance_scale=3.0,
-                temperature=1.0
+                temperature=1.0,
+                max_length=1024
             )
         
         logging.info(f"Shape of generated audio: {audio_values.shape}")
@@ -139,7 +140,7 @@ def main():
     selected_style = st.selectbox("Choose a music style", ["Jazz", "Rock", "Electronic", "Classical", "Pop"])
     
     # Replace slider with a select box for duration
-    duration_options = [10]
+    duration_options = [5, 10]
     duration = st.selectbox("Select duration (seconds)", duration_options)
 
     if st.button("Generate Music"):
